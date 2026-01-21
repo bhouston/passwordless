@@ -1,0 +1,247 @@
+import { createServerFn } from '@tanstack/react-start';
+import { jwtVerify, SignJWT } from 'jose';
+import { getEnvConfig } from './env';
+
+// Token expiration times (in seconds)
+const CODE_VERIFICATION_TOKEN_EXPIRATION = 15 * 60; // 15 minutes
+const PASSKEY_CHALLENGE_TOKEN_EXPIRATION = 10 * 60; // 10 minutes
+/**
+ * Code verification token payload
+ */
+export interface CodeVerificationTokenPayload {
+  userId?: number; // Present if account exists
+  email?: string; // Present if account doesn't exist
+  userAuthAttemptId: number; // ID of the userAuthAttempts record
+  iat: number;
+  exp: number;
+}
+
+/**
+ * Passkey challenge token payload
+ */
+export interface PasskeyChallengeTokenPayload {
+  challenge: string;
+  userId: number;
+  email: string;
+  iat: number;
+  exp: number;
+}
+
+/**
+ * Passkey discovery token payload (for discovery flow without userId)
+ */
+export interface PasskeyDiscoveryTokenPayload {
+  challenge: string;
+  iat: number;
+  exp: number;
+}
+
+/**
+ * Creates a JWT token for code verification
+ * @param userId - User's ID (null if account doesn't exist)
+ * @param email - User's email (always required)
+ * @param userAuthAttemptId - ID of the userAuthAttempts record
+ * @returns Signed JWT token string
+ */
+export async function signCodeVerificationToken(
+  userId: number | null,
+  email: string,
+  userAuthAttemptId: number,
+): Promise<string> {
+  const env = getEnvConfig();
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  const now = Math.floor(Date.now() / 1000);
+
+  const payload: Record<string, unknown> = { userAuthAttemptId };
+  if (userId !== null) {
+    payload.userId = userId;
+  } else {
+    payload.email = email;
+  }
+
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt(now)
+    .setExpirationTime(now + CODE_VERIFICATION_TOKEN_EXPIRATION)
+    .sign(secret);
+
+  return token;
+}
+
+/**
+ * Verifies and extracts payload from a code verification token
+ * @param token - JWT token string
+ * @returns Token payload if valid, throws error if invalid/expired
+ */
+export async function verifyCodeVerificationToken(token: string): Promise<CodeVerificationTokenPayload> {
+  const env = getEnvConfig();
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
+
+  try {
+    const { payload } = await jwtVerify(token, secret, {
+      algorithms: ['HS256'],
+    });
+
+    // Validate payload structure
+    if (typeof payload.userAuthAttemptId !== 'number') {
+      throw new Error('Invalid token payload structure: missing userAuthAttemptId');
+    }
+
+    // Either userId or email must be present, but not both
+    const hasUserId = typeof payload.userId === 'number';
+    const hasEmail = typeof payload.email === 'string';
+
+    if (!hasUserId && !hasEmail) {
+      throw new Error('Invalid token payload structure: missing userId or email');
+    }
+
+    if (hasUserId && hasEmail) {
+      throw new Error('Invalid token payload structure: cannot have both userId and email');
+    }
+
+    return {
+      userId: hasUserId ? (payload.userId as number) : undefined,
+      email: hasEmail ? (payload.email as string) : undefined,
+      userAuthAttemptId: payload.userAuthAttemptId as number,
+      iat: payload.iat as number,
+      exp: payload.exp as number,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Token verification failed: ${error.message}`, { cause: error });
+    }
+    throw new Error('Token verification failed: Unknown error', { cause: error });
+  }
+}
+
+const codeVerificationTokenSchema = {
+  parse(data: unknown) {
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      !('token' in data) ||
+      typeof (data as { token: unknown }).token !== 'string'
+    ) {
+      throw new Error('Token is required');
+    }
+
+    return { token: (data as { token: string }).token };
+  },
+};
+
+export const validateCodeVerificationToken = createServerFn({ method: 'GET' })
+  .inputValidator((data: unknown) => codeVerificationTokenSchema.parse(data))
+  .handler(async ({ data }) => {
+    await verifyCodeVerificationToken(data.token);
+    return { valid: true };
+  });
+
+/**
+ * Creates a JWT token for passkey challenge verification
+ * @param challenge - The WebAuthn challenge string
+ * @param userId - User's ID
+ * @param email - User's email
+ * @returns Signed JWT token string
+ */
+export async function signPasskeyChallengeToken(challenge: string, userId: number, email: string): Promise<string> {
+  const env = getEnvConfig();
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  const now = Math.floor(Date.now() / 1000);
+
+  const token = await new SignJWT({ challenge, userId, email })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt(now)
+    .setExpirationTime(now + PASSKEY_CHALLENGE_TOKEN_EXPIRATION)
+    .sign(secret);
+
+  return token;
+}
+
+/**
+ * Verifies and extracts payload from a passkey challenge token
+ * @param token - JWT token string
+ * @returns Token payload if valid, throws error if invalid/expired
+ */
+export async function verifyPasskeyChallengeToken(token: string): Promise<PasskeyChallengeTokenPayload> {
+  const env = getEnvConfig();
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
+
+  try {
+    const { payload } = await jwtVerify(token, secret, {
+      algorithms: ['HS256'],
+    });
+
+    // Validate payload structure
+    if (
+      typeof payload.challenge !== 'string' ||
+      typeof payload.userId !== 'number' ||
+      typeof payload.email !== 'string'
+    ) {
+      throw new Error('Invalid token payload structure');
+    }
+
+    return {
+      challenge: payload.challenge,
+      userId: payload.userId,
+      email: payload.email,
+      iat: payload.iat as number,
+      exp: payload.exp as number,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Token verification failed: ${error.message}`, { cause: error });
+    }
+    throw new Error('Token verification failed: Unknown error', { cause: error });
+  }
+}
+
+/**
+ * Creates a JWT token for passkey discovery (challenge only, no userId)
+ * @param challenge - The WebAuthn challenge string
+ * @returns Signed JWT token string
+ */
+export async function signPasskeyDiscoveryToken(challenge: string): Promise<string> {
+  const env = getEnvConfig();
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  const now = Math.floor(Date.now() / 1000);
+
+  const token = await new SignJWT({ challenge })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt(now)
+    .setExpirationTime(now + PASSKEY_CHALLENGE_TOKEN_EXPIRATION)
+    .sign(secret);
+
+  return token;
+}
+
+/**
+ * Verifies and extracts payload from a passkey discovery token
+ * @param token - JWT token string
+ * @returns Token payload if valid, throws error if invalid/expired
+ */
+export async function verifyPasskeyDiscoveryToken(token: string): Promise<PasskeyDiscoveryTokenPayload> {
+  const env = getEnvConfig();
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
+
+  try {
+    const { payload } = await jwtVerify(token, secret, {
+      algorithms: ['HS256'],
+    });
+
+    // Validate payload structure (discovery token only has challenge)
+    if (typeof payload.challenge !== 'string') {
+      throw new Error('Invalid token payload structure');
+    }
+
+    return {
+      challenge: payload.challenge,
+      iat: payload.iat as number,
+      exp: payload.exp as number,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Token verification failed: ${error.message}`, { cause: error });
+    }
+    throw new Error('Token verification failed: Unknown error', { cause: error });
+  }
+}

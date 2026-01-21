@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "vitest.explorer",
+    "oxc.oxc-vscode",
+    "github.vscode-github-actions",
+    "typescriptteam.native-preview",
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-sqlite"
+  ]
+}
