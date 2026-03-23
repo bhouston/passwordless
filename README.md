@@ -2,19 +2,21 @@
 
 This is a small demo app that shows **passwordless authentication** using **WebAuthn passkeys** as the main path and **email one-time codes** as a backup. Use the source for implementation details.
 
+## Technology Stack
+
+- TanStack Start + Router for web site
+- TailwindCSS + ShadCN for components and styling
+- TanStack Form to manage forms.
+- SimpleWebAuthn for Passkeys
+
 ## Run the app
 
 First time (install dependencies and initialize the local database):
 
 ```bash
 pnpm install
-pnpm db:init # initializes a local sqlite database (requires sqlite to be installed and available on the path)
-```
-
-Start the dev server:
-
-```bash
-pnpm dev
+pnpm db:init   # initializes local SQLite database
+pnpm dev       # start dev server
 ```
 
 ## Tests
