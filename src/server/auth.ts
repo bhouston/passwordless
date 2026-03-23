@@ -3,19 +3,19 @@ import { createHash } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
-import { users, userAuthAttempts } from '@/db/schema';
+import { users } from '@/db/schema';
 import { clearAppSession, setSessionUserId } from './appSession';
 import { signCodeVerificationToken, verifyCodeVerificationToken } from './jwt';
-import { broadcastTestOtp } from './testOtpSse';
+import { broadcastTestOtp } from './testOtp';
 
 // Zod schemas for validation
 const signupSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
 });
 
 const requestLoginCodeSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
 });
 
 const verifyLoginCodeSchema = z.object({
@@ -62,7 +62,7 @@ function hashOTPCode(code: string): string {
  * Rate limited by IP and email address
  */
 export const requestSignupOTP = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => signupSchema.parse(data))
+  .inputValidator(signupSchema)
   .handler(async ({ data }) => {
     // Check if email already exists
     const existingUser = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
@@ -75,29 +75,12 @@ export const requestSignupOTP = createServerFn({ method: 'POST' })
     const code = generateOTPCode();
     const codeHash = hashOTPCode(code);
 
-    // Calculate expiration time (15 minutes from now)
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-    // Create userAuthAttempts record
-    const [attempt] = await db
-      .insert(userAuthAttempts)
-      .values({
-        email: data.email,
-        name: data.name,
-        userId: null,
-        codeHash,
-        purpose: 'signup',
-        expiresAt,
-        used: false,
-      })
-      .returning();
-
-    if (!attempt) {
-      throw new Error('Failed to create signup attempt');
-    }
-
-    // Sign JWT token with userAuthAttemptId
-    const token = await signCodeVerificationToken(null, data.email, attempt.id);
+    const token = await signCodeVerificationToken({
+      purpose: 'signup',
+      email: data.email,
+      name: data.name,
+      codeHash,
+    });
 
     // Console log + SSE broadcast (development/test only)
     broadcastTestOtp({
@@ -108,7 +91,7 @@ export const requestSignupOTP = createServerFn({ method: 'POST' })
       token,
     });
 
-    return { success: true, token };
+    return { token };
   });
 
 /**
@@ -118,115 +101,40 @@ export const requestSignupOTP = createServerFn({ method: 'POST' })
 export const verifySignupOTPAndCreateUser = createServerFn({
   method: 'POST',
 })
-  .inputValidator((data: unknown) => verifySignupCodeSchema.parse(data))
+  .inputValidator(verifySignupCodeSchema)
   .handler(async ({ data }) => {
-    try {
-      // Verify the token
-      const payload = await verifyCodeVerificationToken(data.token);
+    const payload = await verifyCodeVerificationToken(data.token);
 
-      // Look up userAuthAttempts record
-      const [attempt] = await db
-        .select()
-        .from(userAuthAttempts)
-        .where(eq(userAuthAttempts.id, payload.userAuthAttemptId))
-        .limit(1);
-
-      if (!attempt) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      // Validate attempt
-      if (attempt.used) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      if (new Date(attempt.expiresAt) < new Date()) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      if (attempt.purpose !== 'signup') {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      if (attempt.email !== payload.email) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      // Hash the submitted code
-      const submittedCodeHash = hashOTPCode(data.code.toUpperCase());
-
-      // Compare hashes
-      if (attempt.codeHash !== submittedCodeHash) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      // Check if user already exists (race condition protection)
-      const existingUser = await db.select().from(users).where(eq(users.email, attempt.email)).limit(1);
-
-      if (existingUser.length > 0) {
-        return {
-          success: false,
-          error: 'An account with this email already exists',
-        };
-      }
-
-      // Mark attempt as used
-      await db.update(userAuthAttempts).set({ used: true }).where(eq(userAuthAttempts.id, attempt.id));
-
-      // Get name from attempt (stored during signup request)
-      if (!attempt.name) {
-        return {
-          success: false,
-          error: 'Invalid signup attempt. Please start over.',
-        };
-      }
-
-      // Create the user
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          name: attempt.name,
-          email: attempt.email,
-        })
-        .returning();
-
-      if (!newUser) {
-        return {
-          success: false,
-          error: 'Failed to create account. Please try again.',
-        };
-      }
-
-      await setSessionUserId(newUser.id);
-
-      return {
-        success: true,
-        user: newUser,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Signup failed. The code may be invalid or expired.',
-      };
+    if (payload.purpose !== 'signup') {
+      throw new Error('Invalid code. Please check your email and try again.');
     }
+
+    const submittedCodeHash = hashOTPCode(data.code.toUpperCase());
+    if (payload.codeHash !== submittedCodeHash) {
+      throw new Error('Invalid code. Please check your email and try again.');
+    }
+
+    const existingUser = await db.select().from(users).where(eq(users.email, payload.email)).limit(1);
+
+    if (existingUser.length > 0) {
+      throw new Error('An account with this email already exists');
+    }
+
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        name: payload.name,
+        email: payload.email,
+      })
+      .returning();
+
+    if (!newUser) {
+      throw new Error('Failed to create account. Please try again.');
+    }
+
+    await setSessionUserId(newUser.id);
+
+    return { user: newUser };
   });
 
 /**
@@ -235,7 +143,7 @@ export const verifySignupOTPAndCreateUser = createServerFn({
  * Rate limited by IP and email address
  */
 export const requestLoginCode = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => requestLoginCodeSchema.parse(data))
+  .inputValidator(requestLoginCodeSchema)
   .handler(async ({ data }) => {
     // Look up user by email
     const [user] = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
@@ -244,32 +152,15 @@ export const requestLoginCode = createServerFn({ method: 'POST' })
       throw new Error('This email is not registered. Please sign up to create an account.');
     }
 
-    // Generate OTP code
     const code = generateOTPCode();
     const codeHash = hashOTPCode(code);
 
-    // Calculate expiration time (15 minutes from now)
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-    // Create userAuthAttempts record
-    const [attempt] = await db
-      .insert(userAuthAttempts)
-      .values({
-        email: data.email,
-        userId: user.id,
-        codeHash,
-        purpose: 'login',
-        expiresAt,
-        used: false,
-      })
-      .returning();
-
-    if (!attempt) {
-      throw new Error('Failed to create login attempt');
-    }
-
-    // Sign JWT token with userAuthAttemptId
-    const token = await signCodeVerificationToken(user.id, data.email, attempt.id);
+    const token = await signCodeVerificationToken({
+      purpose: 'login',
+      userId: user.id,
+      email: data.email,
+      codeHash,
+    });
 
     // Console log + SSE broadcast (development/test only)
     broadcastTestOtp({
@@ -279,7 +170,7 @@ export const requestLoginCode = createServerFn({ method: 'POST' })
       token,
     });
 
-    return { success: true, token };
+    return { token };
   });
 
 /**
@@ -289,110 +180,28 @@ export const requestLoginCode = createServerFn({ method: 'POST' })
 export const verifyLoginCodeAndAuthenticate = createServerFn({
   method: 'POST',
 })
-  .inputValidator((data: unknown) => verifyLoginCodeSchema.parse(data))
+  .inputValidator(verifyLoginCodeSchema)
   .handler(async ({ data }) => {
-    try {
-      // Verify the token
-      const payload = await verifyCodeVerificationToken(data.token);
+    const payload = await verifyCodeVerificationToken(data.token);
 
-      // Look up userAuthAttempts record
-      const [attempt] = await db
-        .select()
-        .from(userAuthAttempts)
-        .where(eq(userAuthAttempts.id, payload.userAuthAttemptId))
-        .limit(1);
-
-      if (!attempt) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      // Validate attempt
-      if (attempt.used) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      if (new Date(attempt.expiresAt) < new Date()) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      if (attempt.purpose !== 'login') {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      // Verify email matches (if provided in JWT)
-      if (payload.email && attempt.email !== payload.email) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      if (payload.userId && attempt.userId !== payload.userId) {
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      // Hash the submitted code
-      const submittedCodeHash = hashOTPCode(data.code.toUpperCase());
-
-      // Compare hashes
-      if (attempt.codeHash !== submittedCodeHash) {
-        // Generic error - don't reveal if account exists or code was wrong
-        return {
-          success: false,
-          error: 'Invalid code. Please check your email and try again.',
-        };
-      }
-
-      // If userId exists and code matches, authenticate user
-      if (attempt.userId) {
-        // Verify user exists in database
-        const user = await db.select().from(users).where(eq(users.id, attempt.userId)).limit(1);
-
-        if (user.length === 0) {
-          return {
-            success: false,
-            error: 'Invalid code. Please check your email and try again.',
-          };
-        }
-
-        // Mark attempt as used
-        await db.update(userAuthAttempts).set({ used: true }).where(eq(userAuthAttempts.id, attempt.id));
-
-        await setSessionUserId(attempt.userId);
-
-        return {
-          success: true,
-          user: user[0],
-        };
-      }
-
-      // If no userId, code verification will always fail (account doesn't exist)
-      // Return generic error to prevent enumeration
-      return {
-        success: false,
-        error: 'Invalid code. Please check your email and try again.',
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Invalid code. Please check your email and try again.',
-      };
+    if (payload.purpose !== 'login') {
+      throw new Error('Invalid code. Please check your email and try again.');
     }
+
+    const submittedCodeHash = hashOTPCode(data.code.toUpperCase());
+    if (payload.codeHash !== submittedCodeHash) {
+      throw new Error('Invalid code. Please check your email and try again.');
+    }
+
+    const [dbUser] = await db.select().from(users).where(eq(users.id, payload.userId)).limit(1);
+
+    if (!dbUser || dbUser.email !== payload.email) {
+      throw new Error('Invalid code. Please check your email and try again.');
+    }
+
+    await setSessionUserId(payload.userId);
+
+    return { user: dbUser };
   });
 
 /**
@@ -401,5 +210,4 @@ export const verifyLoginCodeAndAuthenticate = createServerFn({
  */
 export const logout = createServerFn({ method: 'POST' }).handler(async () => {
   await clearAppSession();
-  return { success: true };
 });

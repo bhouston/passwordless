@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { getLastTestOtp } from '@/server/testOtpSse';
-import type { TestOtpEventType } from '@/server/testOtpSse';
+import { getLastTestOtp } from '@/server/testOtp';
+import type { TestOtpEventType } from '@/server/testOtp';
 import { z } from 'zod';
 
 const emailParamSchema = z.string().min(1, 'Email is required').email('Invalid email');

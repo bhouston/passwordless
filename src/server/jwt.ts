@@ -1,20 +1,45 @@
 import { createServerFn } from '@tanstack/react-start';
 import { jwtVerify, SignJWT } from 'jose';
+import { z } from 'zod';
 import { getEnvConfig } from './env';
 
 // Token expiration times (in seconds)
 const CODE_VERIFICATION_TOKEN_EXPIRATION = 15 * 60; // 15 minutes
 const PASSKEY_CHALLENGE_TOKEN_EXPIRATION = 10 * 60; // 10 minutes
-/**
- * Code verification token payload
- */
-export interface CodeVerificationTokenPayload {
-  userId?: number; // Present if account exists
-  email?: string; // Present if account doesn't exist
-  userAuthAttemptId: number; // ID of the userAuthAttempts record
-  iat: number;
-  exp: number;
-}
+
+const jwtIssuedExpirySchema = z.object({
+  iat: z.number(),
+  exp: z.number(),
+});
+
+const codeVerificationSignupSignSchema = z.object({
+  purpose: z.literal('signup'),
+  email: z.string(),
+  name: z.string(),
+  codeHash: z.string().min(1),
+});
+
+const codeVerificationLoginSignSchema = z.object({
+  purpose: z.literal('login'),
+  userId: z.number(),
+  email: z.string(),
+  codeHash: z.string().min(1),
+});
+
+/** Fields embedded in the JWT when issuing a code verification token (no iat/exp — jose adds those). */
+export const codeVerificationSignInputSchema = z.discriminatedUnion('purpose', [
+  codeVerificationSignupSignSchema,
+  codeVerificationLoginSignSchema,
+]);
+
+/** Full payload after `jwtVerify` (includes standard time claims). */
+export const codeVerificationVerifiedPayloadSchema = z.discriminatedUnion('purpose', [
+  codeVerificationSignupSignSchema.merge(jwtIssuedExpirySchema),
+  codeVerificationLoginSignSchema.merge(jwtIssuedExpirySchema),
+]);
+
+export type CodeVerificationSignInput = z.infer<typeof codeVerificationSignInputSchema>;
+export type CodeVerificationTokenPayload = z.infer<typeof codeVerificationVerifiedPayloadSchema>;
 
 /**
  * Passkey challenge token payload
@@ -37,29 +62,15 @@ export interface PasskeyDiscoveryTokenPayload {
 }
 
 /**
- * Creates a JWT token for code verification
- * @param userId - User's ID (null if account doesn't exist)
- * @param email - User's email (always required)
- * @param userAuthAttemptId - ID of the userAuthAttempts record
- * @returns Signed JWT token string
+ * Creates a JWT for OTP verification (code hash and flow fields live in the token).
  */
-export async function signCodeVerificationToken(
-  userId: number | null,
-  email: string,
-  userAuthAttemptId: number,
-): Promise<string> {
+export async function signCodeVerificationToken(input: CodeVerificationSignInput): Promise<string> {
+  const validated = codeVerificationSignInputSchema.parse(input);
   const env = getEnvConfig();
   const secret = new TextEncoder().encode(env.JWT_SECRET);
   const now = Math.floor(Date.now() / 1000);
 
-  const payload: Record<string, unknown> = { userAuthAttemptId };
-  if (userId !== null) {
-    payload.userId = userId;
-  } else {
-    payload.email = email;
-  }
-
-  const token = await new SignJWT(payload)
+  const token = await new SignJWT(validated)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt(now)
     .setExpirationTime(now + CODE_VERIFICATION_TOKEN_EXPIRATION)
@@ -81,32 +92,11 @@ export async function verifyCodeVerificationToken(token: string): Promise<CodeVe
     const { payload } = await jwtVerify(token, secret, {
       algorithms: ['HS256'],
     });
-
-    // Validate payload structure
-    if (typeof payload.userAuthAttemptId !== 'number') {
-      throw new Error('Invalid token payload structure: missing userAuthAttemptId');
-    }
-
-    // Either userId or email must be present, but not both
-    const hasUserId = typeof payload.userId === 'number';
-    const hasEmail = typeof payload.email === 'string';
-
-    if (!hasUserId && !hasEmail) {
-      throw new Error('Invalid token payload structure: missing userId or email');
-    }
-
-    if (hasUserId && hasEmail) {
-      throw new Error('Invalid token payload structure: cannot have both userId and email');
-    }
-
-    return {
-      userId: hasUserId ? (payload.userId as number) : undefined,
-      email: hasEmail ? (payload.email as string) : undefined,
-      userAuthAttemptId: payload.userAuthAttemptId as number,
-      iat: payload.iat as number,
-      exp: payload.exp as number,
-    };
+    return codeVerificationVerifiedPayloadSchema.parse(payload);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(`Token verification failed: invalid payload (${error.message})`, { cause: error });
+    }
     if (error instanceof Error) {
       throw new Error(`Token verification failed: ${error.message}`, { cause: error });
     }
@@ -114,23 +104,12 @@ export async function verifyCodeVerificationToken(token: string): Promise<CodeVe
   }
 }
 
-const codeVerificationTokenSchema = {
-  parse(data: unknown) {
-    if (
-      !data ||
-      typeof data !== 'object' ||
-      !('token' in data) ||
-      typeof (data as { token: unknown }).token !== 'string'
-    ) {
-      throw new Error('Token is required');
-    }
-
-    return { token: (data as { token: string }).token };
-  },
-};
+const validateCodeVerificationTokenInputSchema = z.object({
+  token: z.string().min(1, 'Token is required'),
+});
 
 export const validateCodeVerificationToken = createServerFn({ method: 'GET' })
-  .inputValidator((data: unknown) => codeVerificationTokenSchema.parse(data))
+  .inputValidator(validateCodeVerificationTokenInputSchema)
   .handler(async ({ data }) => {
     await verifyCodeVerificationToken(data.token);
     return { valid: true };

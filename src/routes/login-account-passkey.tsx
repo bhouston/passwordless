@@ -14,7 +14,7 @@ import { initiatePasskeyAuthenticationForEmail, verifyAuthenticationResponse } f
 import { getUserWithPasskey } from '@/server/user';
 
 const accountPasskeyLoginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
 });
 
 export const Route = createFileRoute('/login-account-passkey')({

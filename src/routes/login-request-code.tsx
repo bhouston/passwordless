@@ -14,7 +14,7 @@ import { requestLoginCode } from '@/server/auth';
 
 // Zod schema for form validation
 const loginRequestSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
 });
 
 export const Route = createFileRoute('/login-request-code')({

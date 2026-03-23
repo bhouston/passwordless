@@ -72,7 +72,7 @@ const generateRegistrationOptionsSchema = z.object({
  */
 export const generateRegistrationOptions = createServerFn({ method: 'POST' })
   .middleware([requireUser])
-  .inputValidator((data: unknown) => generateRegistrationOptionsSchema.parse(data))
+  .inputValidator(generateRegistrationOptionsSchema)
   .handler(async ({ data, context }) => {
     const user = context.user;
     if (user.id !== data.userId) {
@@ -118,7 +118,7 @@ const verifyRegistrationResponseSchema = z.object({
  */
 export const verifyRegistrationResponse = createServerFn({ method: 'POST' })
   .middleware([requireUser])
-  .inputValidator((data: unknown) => verifyRegistrationResponseSchema.parse(data))
+  .inputValidator(verifyRegistrationResponseSchema)
   .handler(async ({ data, context }) => {
     const user = context.user;
     if (user.id !== data.userId) {
@@ -207,7 +207,7 @@ export const initiatePasskeyDiscovery = createServerFn({
 });
 
 const initiatePasskeyAuthForEmailSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
 });
 
 /**
@@ -217,7 +217,7 @@ const initiatePasskeyAuthForEmailSchema = z.object({
 export const initiatePasskeyAuthenticationForEmail = createServerFn({
   method: 'POST',
 })
-  .inputValidator((data: unknown) => initiatePasskeyAuthForEmailSchema.parse(data))
+  .inputValidator(initiatePasskeyAuthForEmailSchema)
   .handler(async ({ data }) => {
     const email = data.email.trim();
 
@@ -267,7 +267,7 @@ const verifyAuthenticationResponseSchema = z.object({
  * Supports both discovery mode (no userId in token) and regular mode (userId in token)
  */
 export const verifyAuthenticationResponse = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => verifyAuthenticationResponseSchema.parse(data))
+  .inputValidator(verifyAuthenticationResponseSchema)
   .handler(async ({ data }) => {
     let isDiscovery = false;
     let expectedChallenge: string;
@@ -371,7 +371,7 @@ const deletePasskeySchema = z.object({
  */
 export const deletePasskey = createServerFn({ method: 'POST' })
   .middleware([requireUser])
-  .inputValidator((data: unknown) => deletePasskeySchema.parse(data))
+  .inputValidator(deletePasskeySchema)
   .handler(async ({ data, context }) => {
     const user = context.user;
     if (user.id !== data.userId) {
