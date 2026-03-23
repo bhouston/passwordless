@@ -2,7 +2,7 @@ import { createMiddleware } from '@tanstack/react-start';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { users } from '@/db/schema';
-import { getSessionUserId } from './appSession';
+import { useAppSession } from './appSession';
 
 /**
  * Authentication middleware that ensures a user is logged in
@@ -10,7 +10,7 @@ import { getSessionUserId } from './appSession';
  * and attaches the user object to context for use in server functions
  */
 export const requireUser = createMiddleware({ type: 'function' }).server(async ({ next }) => {
-  const userId = await getSessionUserId();
+  const userId = (await useAppSession()).data.userId;
   if (userId === undefined) {
     throw new Error('Not authenticated');
   }

@@ -42,16 +42,3 @@ export async function clearAppSession(): Promise<void> {
   const session = await useAppSession();
   await session.clear();
 }
-
-export async function getSessionUserId(): Promise<number | undefined> {
-  const session = await useAppSession();
-  const raw = session.data.userId;
-  if (typeof raw === 'number' && Number.isFinite(raw)) {
-    return raw;
-  }
-  if (typeof raw === 'string') {
-    const n = parseInt(raw, 10);
-    return Number.isNaN(n) ? undefined : n;
-  }
-  return undefined;
-}

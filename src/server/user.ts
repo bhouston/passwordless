@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { passkeys, users } from '@/db/schema';
 import type { SessionUser } from '@/lib/sessionTypes';
-import { getSessionUserId } from './appSession';
 import { requireUser } from './middleware';
+import { useAppSession } from './appSession';
 
 const updateUserNameSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -39,7 +39,7 @@ export const getSessionUserOptional = createServerFn({ method: 'GET' }).handler(
     sessionUser: SessionUser | null;
     hasPasskey: boolean;
   }> => {
-    const userId = await getSessionUserId();
+    const userId = (await useAppSession()).data.userId;
     if (userId === undefined) {
       return { sessionUser: null, hasPasskey: false };
     }
