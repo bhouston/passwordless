@@ -1,28 +1,22 @@
-import { createFileRoute, getRouteApi, Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { useEffect, useRef, useState } from 'react';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
 import { useToastMutation } from '@/hooks/useToastMutation';
-import { redirectToSchema } from '@/lib/schemas';
 import { isWebAuthnSupported, startPasskeyAuthentication } from '@/lib/webauthnClient';
 import { initiatePasskeyDiscovery, verifyAuthenticationResponse } from '@/server/passkey';
 
-const rootRouteApi = getRouteApi('__root__');
-
-export const Route = createFileRoute('/login-passkey')({
-  validateSearch: redirectToSchema,
+export const Route = createFileRoute('/_nonauthed/login-passkey')({
   component: LoginPasskeyPage,
 });
 
 function LoginPasskeyPage() {
-  const { redirectTo = '/' } = Route.useSearch();
   const navigate = useNavigate();
   const router = useRouter();
-  const { sessionUser } = rootRouteApi.useRouteContext();
   const generateAuthOptions = useServerFn(initiatePasskeyDiscovery);
   const verifyAuthResponseFn = useServerFn(verifyAuthenticationResponse);
-  const [error, setError] = useState<string>();
+  const [formError, setFormError] = useState<string>();
   const hasAttemptedRef = useRef(false);
 
   const passkeyLoginMutation = useToastMutation({
@@ -45,40 +39,17 @@ function LoginPasskeyPage() {
     },
     onSuccess: async () => {
       await router.invalidate();
-      await navigate({ to: redirectTo, reloadDocument: true });
+      await navigate({ to: '/user-settings', reloadDocument: true });
     },
-    onError: (err) => {
-      setError(err instanceof Error ? err.message : 'An error occurred during passkey authentication.');
-    },
+    setFormError,
   });
 
-  // Automatically trigger passkey login on mount
+  // Automatically trigger passkey login on mount (unsupported browsers use the render branch below)
   useEffect(() => {
-    // Prevent multiple attempts
-    if (hasAttemptedRef.current) return;
-
-    // If user is already logged in, redirect
-    if (sessionUser) {
-      void navigate({ to: redirectTo });
-      return;
-    }
-
-    // Check WebAuthn support
-    if (!isWebAuthnSupported()) {
-      setError('Passkeys are not supported in this browser. Please use a modern browser.');
-      hasAttemptedRef.current = true;
-      return;
-    }
-
-    // Trigger passkey authentication
+    if (hasAttemptedRef.current || !isWebAuthnSupported()) return;
     hasAttemptedRef.current = true;
     void passkeyLoginMutation.mutateAsync();
-  }, [sessionUser, redirectTo, navigate, passkeyLoginMutation]);
-
-  // Redirect if already logged in
-  if (sessionUser) {
-    return null; // Will redirect in useEffect
-  }
+  }, [passkeyLoginMutation]);
 
   // Show error if WebAuthn not supported
   if (!isWebAuthnSupported()) {
@@ -90,9 +61,7 @@ function LoginPasskeyPage() {
           </p>
           <div className="flex flex-col gap-2">
             <Button asChild={true} className="w-full">
-              <Link search={{ redirectTo }} to="/login">
-                Back to Login
-              </Link>
+              <Link to="/login">Back to Login</Link>
             </Button>
           </div>
         </div>
@@ -101,16 +70,14 @@ function LoginPasskeyPage() {
   }
 
   // Show error state
-  if (error) {
+  if (formError) {
     return (
       <AuthLayout title="Passkey Login Failed">
         <div className="space-y-4">
-          <p className="text-center text-muted-foreground">{error}</p>
+          <p className="text-center text-muted-foreground">{formError}</p>
           <div className="flex flex-col gap-2">
             <Button asChild={true} className="w-full" variant="outline">
-              <Link search={{ redirectTo }} to="/login">
-                Back to Login
-              </Link>
+              <Link to="/login">Back to Login</Link>
             </Button>
           </div>
         </div>

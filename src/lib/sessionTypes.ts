@@ -12,5 +12,4 @@ export type SessionUser = {
  */
 export type RouterContext = {
   sessionUser: SessionUser | null;
-  hasPasskey: boolean;
 };

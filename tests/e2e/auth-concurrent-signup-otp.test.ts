@@ -20,7 +20,7 @@ async function startSignup(page: Page, { email, name }: { email: string; name: s
   await page.getByLabel(/email/i).fill(email);
   await page.getByRole('button', { name: 'Sign Up' }).click();
 
-  await expect(page).toHaveURL(/\/signup\/[^/]+$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/signup-verify\/[^/]+$/, { timeout: 15000 });
 }
 
 async function verifySignup(page: Page, code: string) {

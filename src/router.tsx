@@ -10,7 +10,6 @@ export const getRouter = () => {
     routeTree,
     context: {
       sessionUser: null,
-      hasPasskey: false,
     } satisfies RouterContext,
 
     scrollRestoration: true,

@@ -106,15 +106,16 @@ const token = await signCodeVerificationToken(user.id, user.email, attempt.id);
 ```typescript:src/routes/login-via-code.$codeVerificationToken.tsx
 export const Route = createFileRoute('/login-via-code/$codeVerificationToken')({
 	beforeLoad: async ({ params }) => {
-		// 1. Verify token format (but don't authenticate yet)
-		await verifyCodeVerificationToken(params.codeVerificationToken);
-		return { tokenValid: true };
+		// Verify token (invalid/expired throws → root route errorComponent)
+		await validateCodeVerificationToken({
+			data: { token: params.codeVerificationToken },
+		});
 	},
-	component: LoginViaCodePage
+	component: LoginViaCodePage,
 });
 ```
 
-> **Speaker Note:** "Notice `beforeLoad`. In this stack, we verify the token _before_ the React component even renders. The actual code verification happens when the user submits the form, ensuring the code is validated server-side."
+> **Speaker Note:** "Notice `beforeLoad`. In this stack, we verify the token _before_ the React component even renders. If the JWT is bad, the router shows the global error page with the message. The actual OTP verification happens when the user submits the form, ensuring the code is validated server-side."
 
 ### 2.3 Signup Flow
 

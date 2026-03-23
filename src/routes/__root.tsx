@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRootRouteWithContext, HeadContent, Scripts } from '@tanstack/react-router';
 import { GoogleAnalytics } from 'tanstack-router-ga4';
 import { useEffect } from 'react';
+import { RouteErrorFallback } from '@/components/auth/RouteErrorFallback';
 import { Header } from '@/components/layout/Header';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { Toaster } from '@/components/ui/sonner';
@@ -21,8 +22,8 @@ const queryClient = new QueryClient({
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async () => {
-    const { sessionUser, hasPasskey } = await getSessionUserOptional();
-    return { sessionUser, hasPasskey };
+    const { sessionUser } = await getSessionUserOptional();
+    return { sessionUser };
   },
   head: () => ({
     meta: [
@@ -44,6 +45,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
     ],
   }),
+
+  // Rendered inside `shellComponent` (same as TanStack Start `start-basic` + DefaultCatchBoundary pattern).
+  errorComponent: RouteErrorFallback,
 
   shellComponent: RootDocument,
 });

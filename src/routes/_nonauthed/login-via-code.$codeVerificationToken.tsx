@@ -6,38 +6,23 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { InvalidLink } from '@/components/auth/InvalidLink';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { useToastMutation } from '@/hooks/useToastMutation';
-import { redirectToSchema } from '@/lib/schemas';
 import { verifyLoginCodeAndAuthenticate } from '@/server/auth';
 import { validateCodeVerificationToken } from '@/server/jwt';
 
-export const Route = createFileRoute('/login-via-code/$codeVerificationToken')({
-  validateSearch: redirectToSchema,
+export const Route = createFileRoute('/_nonauthed/login-via-code/$codeVerificationToken')({
   beforeLoad: async ({ params }) => {
-    try {
-      // Verify token exists and is valid format (but don't authenticate yet)
-      await validateCodeVerificationToken({
-        data: { token: params.codeVerificationToken },
-      });
-      return { tokenValid: true };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Invalid or expired verification token.';
-      return { tokenValid: false, error: errorMessage };
-    }
+    // Verify token exists and is valid (don't authenticate yet). Invalid/expired tokens throw → root errorComponent.
+    await validateCodeVerificationToken({
+      data: { token: params.codeVerificationToken },
+    });
   },
-  loader: async ({ context: { tokenValid, error } }) => ({
-    tokenValid,
-    error,
-  }),
   component: LoginViaCodePage,
 });
 
 function LoginViaCodePage() {
-  const { tokenValid, error } = Route.useLoaderData();
   const { codeVerificationToken } = Route.useParams();
-  const { redirectTo = '/' } = Route.useSearch();
   const navigate = useNavigate();
   const [formError, setFormError] = useState<string>();
   const verifyCodeFn = useServerFn(verifyLoginCodeAndAuthenticate);
@@ -51,7 +36,7 @@ function LoginViaCodePage() {
           code: variables.code.toUpperCase(),
         },
       }),
-    onSuccess: () => navigate({ to: redirectTo }),
+    onSuccess: () => navigate({ to: '/user-settings' }),
     setFormError,
   });
 
@@ -69,15 +54,6 @@ function LoginViaCodePage() {
     },
     onSubmit: ({ value }) => verifyCodeMutation.mutateAsync({ code: value.code.toUpperCase() }),
   });
-
-  if (!tokenValid) {
-    return (
-      <InvalidLink
-        message={error || 'This verification token is invalid or has expired. Please request a new code.'}
-        title="Invalid Verification Token"
-      />
-    );
-  }
 
   return (
     <AuthLayout title="Enter Verification Code">

@@ -54,7 +54,7 @@ describe('Auth passkey flow', () => {
 
       await logout(page);
 
-      await page.goto(`${baseUrl}/login-account-passkey?redirectTo=%2Fuser-settings`);
+      await page.goto(`${baseUrl}/login-account-passkey`);
       await page.getByLabel(/email/i).fill(testEmail);
       await page.getByRole('button', { name: /Continue with passkey/i }).click();
 
@@ -126,7 +126,7 @@ describe('Auth passkey flow', () => {
         message: 'The operation was cancelled.',
       });
 
-      await page.goto(`${baseUrl}/login-passkey?redirectTo=%2Fuser-settings`);
+      await page.goto(`${baseUrl}/login-passkey`);
 
       await expect(
         page.getByRole('main').getByText(/Authentication was cancelled or not allowed by your device\./i),
@@ -145,7 +145,7 @@ describe('Auth passkey flow', () => {
         message: 'No passkey available',
       });
 
-      await page.goto(`${baseUrl}/login-passkey?redirectTo=%2Fuser-settings`);
+      await page.goto(`${baseUrl}/login-passkey`);
 
       await expect(
         page.getByRole('main').getByText(/No passkey found\. Please login with an email code instead\./i),
@@ -161,7 +161,7 @@ describe('Auth passkey flow', () => {
     try {
       await setWebAuthnSupport(page, false);
 
-      await page.goto(`${baseUrl}/login-passkey?redirectTo=%2Fuser-settings`);
+      await page.goto(`${baseUrl}/login-passkey`);
 
       await expect(page.getByText(/Passkeys are not supported in this browser/i)).toBeVisible();
     } finally {

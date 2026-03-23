@@ -9,220 +9,187 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as LogoutRouteImport } from './routes/logout'
-import { Route as LoginRequestCodeRouteImport } from './routes/login-request-code'
-import { Route as LoginPasskeyRouteImport } from './routes/login-passkey'
-import { Route as LoginAccountPasskeyRouteImport } from './routes/login-account-passkey'
-import { Route as LoginRouteImport } from './routes/login'
+import { Route as NonauthedRouteImport } from './routes/_nonauthed'
 import { Route as AuthedRouteImport } from './routes/_authed'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as SignupVerifySignupTokenRouteImport } from './routes/signup-verify.$signupToken'
-import { Route as LoginViaCodeCodeVerificationTokenRouteImport } from './routes/login-via-code.$codeVerificationToken'
+import { Route as NonauthedIndexRouteImport } from './routes/_nonauthed/index'
 import { Route as ApiOtpLatestRouteImport } from './routes/api/otp-latest'
+import { Route as NonauthedSignupRouteImport } from './routes/_nonauthed/signup'
+import { Route as NonauthedLoginRequestCodeRouteImport } from './routes/_nonauthed/login-request-code'
+import { Route as NonauthedLoginPasskeyRouteImport } from './routes/_nonauthed/login-passkey'
+import { Route as NonauthedLoginAccountPasskeyRouteImport } from './routes/_nonauthed/login-account-passkey'
+import { Route as NonauthedLoginRouteImport } from './routes/_nonauthed/login'
 import { Route as AuthedUserSettingsRouteImport } from './routes/_authed/user-settings'
+import { Route as AuthedLogoutRouteImport } from './routes/_authed/logout'
+import { Route as NonauthedSignupVerifySignupTokenRouteImport } from './routes/_nonauthed/signup-verify.$signupToken'
+import { Route as NonauthedLoginViaCodeCodeVerificationTokenRouteImport } from './routes/_nonauthed/login-via-code.$codeVerificationToken'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LogoutRoute = LogoutRouteImport.update({
-  id: '/logout',
-  path: '/logout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRequestCodeRoute = LoginRequestCodeRouteImport.update({
-  id: '/login-request-code',
-  path: '/login-request-code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginPasskeyRoute = LoginPasskeyRouteImport.update({
-  id: '/login-passkey',
-  path: '/login-passkey',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginAccountPasskeyRoute = LoginAccountPasskeyRouteImport.update({
-  id: '/login-account-passkey',
-  path: '/login-account-passkey',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const NonauthedRoute = NonauthedRouteImport.update({
+  id: '/_nonauthed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthedRoute = AuthedRouteImport.update({
   id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const NonauthedIndexRoute = NonauthedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => NonauthedRoute,
 } as any)
-const SignupVerifySignupTokenRoute = SignupVerifySignupTokenRouteImport.update({
-  id: '/signup-verify/$signupToken',
-  path: '/signup-verify/$signupToken',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginViaCodeCodeVerificationTokenRoute =
-  LoginViaCodeCodeVerificationTokenRouteImport.update({
-    id: '/login-via-code/$codeVerificationToken',
-    path: '/login-via-code/$codeVerificationToken',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiOtpLatestRoute = ApiOtpLatestRouteImport.update({
   id: '/api/otp-latest',
   path: '/api/otp-latest',
   getParentRoute: () => rootRouteImport,
+} as any)
+const NonauthedSignupRoute = NonauthedSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => NonauthedRoute,
+} as any)
+const NonauthedLoginRequestCodeRoute =
+  NonauthedLoginRequestCodeRouteImport.update({
+    id: '/login-request-code',
+    path: '/login-request-code',
+    getParentRoute: () => NonauthedRoute,
+  } as any)
+const NonauthedLoginPasskeyRoute = NonauthedLoginPasskeyRouteImport.update({
+  id: '/login-passkey',
+  path: '/login-passkey',
+  getParentRoute: () => NonauthedRoute,
+} as any)
+const NonauthedLoginAccountPasskeyRoute =
+  NonauthedLoginAccountPasskeyRouteImport.update({
+    id: '/login-account-passkey',
+    path: '/login-account-passkey',
+    getParentRoute: () => NonauthedRoute,
+  } as any)
+const NonauthedLoginRoute = NonauthedLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => NonauthedRoute,
 } as any)
 const AuthedUserSettingsRoute = AuthedUserSettingsRouteImport.update({
   id: '/user-settings',
   path: '/user-settings',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedLogoutRoute = AuthedLogoutRouteImport.update({
+  id: '/logout',
+  path: '/logout',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const NonauthedSignupVerifySignupTokenRoute =
+  NonauthedSignupVerifySignupTokenRouteImport.update({
+    id: '/signup-verify/$signupToken',
+    path: '/signup-verify/$signupToken',
+    getParentRoute: () => NonauthedRoute,
+  } as any)
+const NonauthedLoginViaCodeCodeVerificationTokenRoute =
+  NonauthedLoginViaCodeCodeVerificationTokenRouteImport.update({
+    id: '/login-via-code/$codeVerificationToken',
+    path: '/login-via-code/$codeVerificationToken',
+    getParentRoute: () => NonauthedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/login-account-passkey': typeof LoginAccountPasskeyRoute
-  '/login-passkey': typeof LoginPasskeyRoute
-  '/login-request-code': typeof LoginRequestCodeRoute
-  '/logout': typeof LogoutRoute
-  '/signup': typeof SignupRoute
+  '/': typeof NonauthedIndexRoute
+  '/logout': typeof AuthedLogoutRoute
   '/user-settings': typeof AuthedUserSettingsRoute
+  '/login': typeof NonauthedLoginRoute
+  '/login-account-passkey': typeof NonauthedLoginAccountPasskeyRoute
+  '/login-passkey': typeof NonauthedLoginPasskeyRoute
+  '/login-request-code': typeof NonauthedLoginRequestCodeRoute
+  '/signup': typeof NonauthedSignupRoute
   '/api/otp-latest': typeof ApiOtpLatestRoute
-  '/login-via-code/$codeVerificationToken': typeof LoginViaCodeCodeVerificationTokenRoute
-  '/signup-verify/$signupToken': typeof SignupVerifySignupTokenRoute
+  '/login-via-code/$codeVerificationToken': typeof NonauthedLoginViaCodeCodeVerificationTokenRoute
+  '/signup-verify/$signupToken': typeof NonauthedSignupVerifySignupTokenRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/login-account-passkey': typeof LoginAccountPasskeyRoute
-  '/login-passkey': typeof LoginPasskeyRoute
-  '/login-request-code': typeof LoginRequestCodeRoute
-  '/logout': typeof LogoutRoute
-  '/signup': typeof SignupRoute
+  '/': typeof NonauthedIndexRoute
+  '/logout': typeof AuthedLogoutRoute
   '/user-settings': typeof AuthedUserSettingsRoute
+  '/login': typeof NonauthedLoginRoute
+  '/login-account-passkey': typeof NonauthedLoginAccountPasskeyRoute
+  '/login-passkey': typeof NonauthedLoginPasskeyRoute
+  '/login-request-code': typeof NonauthedLoginRequestCodeRoute
+  '/signup': typeof NonauthedSignupRoute
   '/api/otp-latest': typeof ApiOtpLatestRoute
-  '/login-via-code/$codeVerificationToken': typeof LoginViaCodeCodeVerificationTokenRoute
-  '/signup-verify/$signupToken': typeof SignupVerifySignupTokenRoute
+  '/login-via-code/$codeVerificationToken': typeof NonauthedLoginViaCodeCodeVerificationTokenRoute
+  '/signup-verify/$signupToken': typeof NonauthedSignupVerifySignupTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/_authed': typeof AuthedRouteWithChildren
-  '/login': typeof LoginRoute
-  '/login-account-passkey': typeof LoginAccountPasskeyRoute
-  '/login-passkey': typeof LoginPasskeyRoute
-  '/login-request-code': typeof LoginRequestCodeRoute
-  '/logout': typeof LogoutRoute
-  '/signup': typeof SignupRoute
+  '/_nonauthed': typeof NonauthedRouteWithChildren
+  '/_authed/logout': typeof AuthedLogoutRoute
   '/_authed/user-settings': typeof AuthedUserSettingsRoute
+  '/_nonauthed/login': typeof NonauthedLoginRoute
+  '/_nonauthed/login-account-passkey': typeof NonauthedLoginAccountPasskeyRoute
+  '/_nonauthed/login-passkey': typeof NonauthedLoginPasskeyRoute
+  '/_nonauthed/login-request-code': typeof NonauthedLoginRequestCodeRoute
+  '/_nonauthed/signup': typeof NonauthedSignupRoute
   '/api/otp-latest': typeof ApiOtpLatestRoute
-  '/login-via-code/$codeVerificationToken': typeof LoginViaCodeCodeVerificationTokenRoute
-  '/signup-verify/$signupToken': typeof SignupVerifySignupTokenRoute
+  '/_nonauthed/': typeof NonauthedIndexRoute
+  '/_nonauthed/login-via-code/$codeVerificationToken': typeof NonauthedLoginViaCodeCodeVerificationTokenRoute
+  '/_nonauthed/signup-verify/$signupToken': typeof NonauthedSignupVerifySignupTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/logout'
+    | '/user-settings'
     | '/login'
     | '/login-account-passkey'
     | '/login-passkey'
     | '/login-request-code'
-    | '/logout'
     | '/signup'
-    | '/user-settings'
     | '/api/otp-latest'
     | '/login-via-code/$codeVerificationToken'
     | '/signup-verify/$signupToken'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/logout'
+    | '/user-settings'
     | '/login'
     | '/login-account-passkey'
     | '/login-passkey'
     | '/login-request-code'
-    | '/logout'
     | '/signup'
-    | '/user-settings'
     | '/api/otp-latest'
     | '/login-via-code/$codeVerificationToken'
     | '/signup-verify/$signupToken'
   id:
     | '__root__'
-    | '/'
     | '/_authed'
-    | '/login'
-    | '/login-account-passkey'
-    | '/login-passkey'
-    | '/login-request-code'
-    | '/logout'
-    | '/signup'
+    | '/_nonauthed'
+    | '/_authed/logout'
     | '/_authed/user-settings'
+    | '/_nonauthed/login'
+    | '/_nonauthed/login-account-passkey'
+    | '/_nonauthed/login-passkey'
+    | '/_nonauthed/login-request-code'
+    | '/_nonauthed/signup'
     | '/api/otp-latest'
-    | '/login-via-code/$codeVerificationToken'
-    | '/signup-verify/$signupToken'
+    | '/_nonauthed/'
+    | '/_nonauthed/login-via-code/$codeVerificationToken'
+    | '/_nonauthed/signup-verify/$signupToken'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   AuthedRoute: typeof AuthedRouteWithChildren
-  LoginRoute: typeof LoginRoute
-  LoginAccountPasskeyRoute: typeof LoginAccountPasskeyRoute
-  LoginPasskeyRoute: typeof LoginPasskeyRoute
-  LoginRequestCodeRoute: typeof LoginRequestCodeRoute
-  LogoutRoute: typeof LogoutRoute
-  SignupRoute: typeof SignupRoute
+  NonauthedRoute: typeof NonauthedRouteWithChildren
   ApiOtpLatestRoute: typeof ApiOtpLatestRoute
-  LoginViaCodeCodeVerificationTokenRoute: typeof LoginViaCodeCodeVerificationTokenRoute
-  SignupVerifySignupTokenRoute: typeof SignupVerifySignupTokenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/logout': {
-      id: '/logout'
-      path: '/logout'
-      fullPath: '/logout'
-      preLoaderRoute: typeof LogoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login-request-code': {
-      id: '/login-request-code'
-      path: '/login-request-code'
-      fullPath: '/login-request-code'
-      preLoaderRoute: typeof LoginRequestCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login-passkey': {
-      id: '/login-passkey'
-      path: '/login-passkey'
-      fullPath: '/login-passkey'
-      preLoaderRoute: typeof LoginPasskeyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login-account-passkey': {
-      id: '/login-account-passkey'
-      path: '/login-account-passkey'
-      fullPath: '/login-account-passkey'
-      preLoaderRoute: typeof LoginAccountPasskeyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/_nonauthed': {
+      id: '/_nonauthed'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof NonauthedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authed': {
@@ -232,26 +199,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_nonauthed/': {
+      id: '/_nonauthed/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup-verify/$signupToken': {
-      id: '/signup-verify/$signupToken'
-      path: '/signup-verify/$signupToken'
-      fullPath: '/signup-verify/$signupToken'
-      preLoaderRoute: typeof SignupVerifySignupTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login-via-code/$codeVerificationToken': {
-      id: '/login-via-code/$codeVerificationToken'
-      path: '/login-via-code/$codeVerificationToken'
-      fullPath: '/login-via-code/$codeVerificationToken'
-      preLoaderRoute: typeof LoginViaCodeCodeVerificationTokenRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof NonauthedIndexRouteImport
+      parentRoute: typeof NonauthedRoute
     }
     '/api/otp-latest': {
       id: '/api/otp-latest'
@@ -260,6 +213,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOtpLatestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_nonauthed/signup': {
+      id: '/_nonauthed/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof NonauthedSignupRouteImport
+      parentRoute: typeof NonauthedRoute
+    }
+    '/_nonauthed/login-request-code': {
+      id: '/_nonauthed/login-request-code'
+      path: '/login-request-code'
+      fullPath: '/login-request-code'
+      preLoaderRoute: typeof NonauthedLoginRequestCodeRouteImport
+      parentRoute: typeof NonauthedRoute
+    }
+    '/_nonauthed/login-passkey': {
+      id: '/_nonauthed/login-passkey'
+      path: '/login-passkey'
+      fullPath: '/login-passkey'
+      preLoaderRoute: typeof NonauthedLoginPasskeyRouteImport
+      parentRoute: typeof NonauthedRoute
+    }
+    '/_nonauthed/login-account-passkey': {
+      id: '/_nonauthed/login-account-passkey'
+      path: '/login-account-passkey'
+      fullPath: '/login-account-passkey'
+      preLoaderRoute: typeof NonauthedLoginAccountPasskeyRouteImport
+      parentRoute: typeof NonauthedRoute
+    }
+    '/_nonauthed/login': {
+      id: '/_nonauthed/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof NonauthedLoginRouteImport
+      parentRoute: typeof NonauthedRoute
+    }
     '/_authed/user-settings': {
       id: '/_authed/user-settings'
       path: '/user-settings'
@@ -267,33 +255,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedUserSettingsRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/logout': {
+      id: '/_authed/logout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof AuthedLogoutRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_nonauthed/signup-verify/$signupToken': {
+      id: '/_nonauthed/signup-verify/$signupToken'
+      path: '/signup-verify/$signupToken'
+      fullPath: '/signup-verify/$signupToken'
+      preLoaderRoute: typeof NonauthedSignupVerifySignupTokenRouteImport
+      parentRoute: typeof NonauthedRoute
+    }
+    '/_nonauthed/login-via-code/$codeVerificationToken': {
+      id: '/_nonauthed/login-via-code/$codeVerificationToken'
+      path: '/login-via-code/$codeVerificationToken'
+      fullPath: '/login-via-code/$codeVerificationToken'
+      preLoaderRoute: typeof NonauthedLoginViaCodeCodeVerificationTokenRouteImport
+      parentRoute: typeof NonauthedRoute
+    }
   }
 }
 
 interface AuthedRouteChildren {
+  AuthedLogoutRoute: typeof AuthedLogoutRoute
   AuthedUserSettingsRoute: typeof AuthedUserSettingsRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedLogoutRoute: AuthedLogoutRoute,
   AuthedUserSettingsRoute: AuthedUserSettingsRoute,
 }
 
 const AuthedRouteWithChildren =
   AuthedRoute._addFileChildren(AuthedRouteChildren)
 
+interface NonauthedRouteChildren {
+  NonauthedLoginRoute: typeof NonauthedLoginRoute
+  NonauthedLoginAccountPasskeyRoute: typeof NonauthedLoginAccountPasskeyRoute
+  NonauthedLoginPasskeyRoute: typeof NonauthedLoginPasskeyRoute
+  NonauthedLoginRequestCodeRoute: typeof NonauthedLoginRequestCodeRoute
+  NonauthedSignupRoute: typeof NonauthedSignupRoute
+  NonauthedIndexRoute: typeof NonauthedIndexRoute
+  NonauthedLoginViaCodeCodeVerificationTokenRoute: typeof NonauthedLoginViaCodeCodeVerificationTokenRoute
+  NonauthedSignupVerifySignupTokenRoute: typeof NonauthedSignupVerifySignupTokenRoute
+}
+
+const NonauthedRouteChildren: NonauthedRouteChildren = {
+  NonauthedLoginRoute: NonauthedLoginRoute,
+  NonauthedLoginAccountPasskeyRoute: NonauthedLoginAccountPasskeyRoute,
+  NonauthedLoginPasskeyRoute: NonauthedLoginPasskeyRoute,
+  NonauthedLoginRequestCodeRoute: NonauthedLoginRequestCodeRoute,
+  NonauthedSignupRoute: NonauthedSignupRoute,
+  NonauthedIndexRoute: NonauthedIndexRoute,
+  NonauthedLoginViaCodeCodeVerificationTokenRoute:
+    NonauthedLoginViaCodeCodeVerificationTokenRoute,
+  NonauthedSignupVerifySignupTokenRoute: NonauthedSignupVerifySignupTokenRoute,
+}
+
+const NonauthedRouteWithChildren = NonauthedRoute._addFileChildren(
+  NonauthedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   AuthedRoute: AuthedRouteWithChildren,
-  LoginRoute: LoginRoute,
-  LoginAccountPasskeyRoute: LoginAccountPasskeyRoute,
-  LoginPasskeyRoute: LoginPasskeyRoute,
-  LoginRequestCodeRoute: LoginRequestCodeRoute,
-  LogoutRoute: LogoutRoute,
-  SignupRoute: SignupRoute,
+  NonauthedRoute: NonauthedRouteWithChildren,
   ApiOtpLatestRoute: ApiOtpLatestRoute,
-  LoginViaCodeCodeVerificationTokenRoute:
-    LoginViaCodeCodeVerificationTokenRoute,
-  SignupVerifySignupTokenRoute: SignupVerifySignupTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

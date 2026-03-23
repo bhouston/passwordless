@@ -97,7 +97,9 @@ export async function signUpViaOtp(
 
 export async function logout(page: Page) {
   await page.goto(`${baseUrl}/logout`);
-  await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
+  await waitForHydration(page);
+  await page.getByRole('button', { name: /^Log out$/i }).click();
+  await expect(page).toHaveURL((url) => url.pathname === '/', { timeout: 15000 });
 }
 
 export async function loginViaEmailCode(
@@ -135,5 +137,5 @@ export async function loginViaEmailCode(
   await page.keyboard.type(loginCode);
   await page.getByRole('button', { name: /Verify Code/ }).click();
 
-  await expect(page).toHaveURL(/\/(user-settings|$)/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/user-settings/, { timeout: 15000 });
 }

@@ -52,7 +52,7 @@ function promptConfirmation(): Promise<boolean> {
     output: process.stdout,
   });
 
-  return new Promise((resolve) => {
+  return new Promise((resolvePromise) => {
     rl.question(
       '\n⚠️  WARNING: This will reset/initialize the project and remove:\n' +
         '   - Existing .env file\n' +
@@ -61,7 +61,7 @@ function promptConfirmation(): Promise<boolean> {
         'Do you want to continue? (yes/no): ',
       (answer) => {
         rl.close();
-        resolve(answer.toLowerCase() === 'yes' || answer.toLowerCase() === 'y');
+        resolvePromise(answer.toLowerCase() === 'yes' || answer.toLowerCase() === 'y');
       },
     );
   });

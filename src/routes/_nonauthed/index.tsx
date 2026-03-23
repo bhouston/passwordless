@@ -1,12 +1,7 @@
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 
-export const Route = createFileRoute('/')({
-  beforeLoad: ({ context }) => {
-    if (context.sessionUser) {
-      throw redirect({ to: '/user-settings' });
-    }
-  },
+export const Route = createFileRoute('/_nonauthed/')({
   component: HomePage,
 });
 

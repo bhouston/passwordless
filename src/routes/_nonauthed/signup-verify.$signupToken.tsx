@@ -3,7 +3,6 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 import { z } from 'zod';
-import { InvalidLink } from '@/components/auth/InvalidLink';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -12,28 +11,17 @@ import { useToastMutation } from '@/hooks/useToastMutation';
 import { verifySignupOTPAndCreateUser } from '@/server/auth';
 import { validateCodeVerificationToken } from '@/server/jwt';
 
-export const Route = createFileRoute('/signup-verify/$signupToken')({
+export const Route = createFileRoute('/_nonauthed/signup-verify/$signupToken')({
   beforeLoad: async ({ params }) => {
-    try {
-      // Verify token exists and is valid format (but don't create user yet)
-      await validateCodeVerificationToken({
-        data: { token: params.signupToken },
-      });
-      return { tokenValid: true };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Invalid or expired verification token.';
-      return { tokenValid: false, error: errorMessage };
-    }
+    // Verify token exists and is valid (don't create user yet). Invalid/expired tokens throw → root errorComponent.
+    await validateCodeVerificationToken({
+      data: { token: params.signupToken },
+    });
   },
-  loader: async ({ context: { tokenValid, error } }) => ({
-    tokenValid,
-    error,
-  }),
   component: SignupPage,
 });
 
 function SignupPage() {
-  const { tokenValid, error } = Route.useLoaderData();
   const { signupToken } = Route.useParams();
   const navigate = useNavigate();
   const [formError, setFormError] = useState<string>();
@@ -66,15 +54,6 @@ function SignupPage() {
     },
     onSubmit: ({ value }) => verifyCodeMutation.mutateAsync(value),
   });
-
-  if (!tokenValid) {
-    return (
-      <InvalidLink
-        message={error || 'This verification token is invalid or has expired. Please request a new code.'}
-        title="Invalid Verification Token"
-      />
-    );
-  }
 
   return (
     <AuthLayout title="Enter Verification Code">

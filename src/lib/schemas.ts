@@ -1,11 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Schema for redirectTo search parameter
- * Used to redirect users after authentication
- */
+/** Search params for `/logout` when redirecting after sign-out (e.g. from `_nonauthed` guard). */
 export const redirectToSchema = z.object({
   redirectTo: z.string().optional().default('/'),
 });
-
-export type RedirectToSearch = z.infer<typeof redirectToSchema>;

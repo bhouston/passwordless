@@ -1,5 +1,5 @@
 import { useForm } from '@tanstack/react-form';
-import { createFileRoute, Link, redirect, useNavigate, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -8,36 +8,20 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useToastMutation } from '@/hooks/useToastMutation';
-import { redirectToSchema } from '@/lib/schemas';
 import { isWebAuthnSupported, startPasskeyAuthentication } from '@/lib/webauthnClient';
 import { initiatePasskeyAuthenticationForEmail, verifyAuthenticationResponse } from '@/server/passkey';
-import { getUserWithPasskey } from '@/server/user';
 
 const accountPasskeyLoginSchema = z.object({
   email: z.email('Please enter a valid email address'),
 });
 
-export const Route = createFileRoute('/login-account-passkey')({
-  validateSearch: redirectToSchema,
-  beforeLoad: async ({ search }) => {
-    try {
-      await getUserWithPasskey({});
-      throw redirect({
-        to: search.redirectTo || '/user-settings',
-      });
-    } catch (error) {
-      if (error && typeof error === 'object' && 'to' in error) {
-        throw error;
-      }
-    }
-  },
+export const Route = createFileRoute('/_nonauthed/login-account-passkey')({
   component: LoginAccountPasskeyPage,
 });
 
 function LoginAccountPasskeyPage() {
   const navigate = useNavigate();
   const router = useRouter();
-  const { redirectTo = '/' } = Route.useSearch();
   const [formError, setFormError] = useState<string>();
   const initiateForEmailFn = useServerFn(initiatePasskeyAuthenticationForEmail);
   const verifyAuthResponseFn = useServerFn(verifyAuthenticationResponse);
@@ -63,7 +47,7 @@ function LoginAccountPasskeyPage() {
     },
     onSuccess: async () => {
       await router.invalidate();
-      await navigate({ to: redirectTo, reloadDocument: true });
+      await navigate({ to: '/user-settings', reloadDocument: true });
     },
     setFormError,
   });
@@ -91,9 +75,7 @@ function LoginAccountPasskeyPage() {
           Use discoverable passkey login or login with an email code instead.
         </p>
         <Button asChild={true} className="w-full">
-          <Link search={{ redirectTo }} to="/login">
-            Back to Login
-          </Link>
+          <Link to="/login">Back to Login</Link>
         </Button>
       </AuthLayout>
     );
@@ -152,7 +134,6 @@ function LoginAccountPasskeyPage() {
           <div className="text-center text-sm text-muted-foreground">
             <Link
               className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 hover:decoration-foreground"
-              search={redirectTo ? { redirectTo } : undefined}
               to="/login"
             >
               Back to Login

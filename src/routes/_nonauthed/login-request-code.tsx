@@ -9,7 +9,6 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/c
 import { Input } from '@/components/ui/input';
 import { useToastMutation } from '@/hooks/useToastMutation';
 import { showLastOtpToast } from '@/lib/demoOtpToast';
-import { redirectToSchema } from '@/lib/schemas';
 import { requestLoginCode } from '@/server/auth';
 
 // Zod schema for form validation
@@ -17,14 +16,12 @@ const loginRequestSchema = z.object({
   email: z.email('Please enter a valid email address'),
 });
 
-export const Route = createFileRoute('/login-request-code')({
-  validateSearch: redirectToSchema,
+export const Route = createFileRoute('/_nonauthed/login-request-code')({
   component: LoginRequestCodePage,
 });
 
 function LoginRequestCodePage() {
   const router = useRouter();
-  const { redirectTo } = Route.useSearch();
   const [formError, setFormError] = useState<string>();
   const requestLoginCodeFn = useServerFn(requestLoginCode);
 
@@ -36,7 +33,6 @@ function LoginRequestCodePage() {
       await router.navigate({
         to: '/login-via-code/$codeVerificationToken',
         params: { codeVerificationToken: result.token },
-        search: { redirectTo },
       });
       await showLastOtpToast('login-otp', variables.email);
     },
@@ -98,7 +94,6 @@ function LoginRequestCodePage() {
           <div className="text-center text-sm text-muted-foreground">
             <Link
               className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 hover:decoration-foreground"
-              search={redirectTo ? { redirectTo } : undefined}
               to="/login"
             >
               Back to Login

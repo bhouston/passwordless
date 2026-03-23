@@ -1,5 +1,5 @@
 import { useForm } from '@tanstack/react-form';
-import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -16,12 +16,7 @@ const signupSchema = z.object({
   email: z.email('Please enter a valid email address'),
 });
 
-export const Route = createFileRoute('/signup')({
-  beforeLoad: ({ context }) => {
-    if (context.sessionUser) {
-      throw redirect({ to: '/user-settings' });
-    }
-  },
+export const Route = createFileRoute('/_nonauthed/signup')({
   component: SignupPage,
 });
 

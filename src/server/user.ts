@@ -31,26 +31,23 @@ export const updateUserName = createServerFn({ method: 'POST' })
   });
 
 /**
- * Optional session: reads auth cookie and returns user + passkey flag, or null when unauthenticated.
+ * Optional session: reads auth cookie and returns user, or null when unauthenticated.
  * Used by root beforeLoad (TanStack Start pattern); does not throw.
  */
 export const getSessionUserOptional = createServerFn({ method: 'GET' }).handler(
   async (): Promise<{
     sessionUser: SessionUser | null;
-    hasPasskey: boolean;
   }> => {
     const userId = (await useAppSession()).data.userId;
     if (userId === undefined) {
-      return { sessionUser: null, hasPasskey: false };
+      return { sessionUser: null };
     }
 
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
     if (!user) {
-      return { sessionUser: null, hasPasskey: false };
+      return { sessionUser: null };
     }
-
-    const userPasskey = await db.select().from(passkeys).where(eq(passkeys.userId, user.id)).limit(1);
 
     const sessionUser: SessionUser = {
       id: user.id,
@@ -60,29 +57,9 @@ export const getSessionUserOptional = createServerFn({ method: 'GET' }).handler(
 
     return {
       sessionUser,
-      hasPasskey: userPasskey.length > 0,
     };
   },
 );
-
-/**
- * Server function to get user with passkey status
- * Uses requireUser middleware to ensure authentication
- * Note: This function doesn't require input data as it uses middleware to get the user
- */
-export const getUserWithPasskey = createServerFn({ method: 'GET' })
-  .middleware([requireUser])
-  .handler(async ({ context }) => {
-    const user = context.user;
-
-    // Check if user has a passkey
-    const userPasskey = await db.select().from(passkeys).where(eq(passkeys.userId, user.id)).limit(1);
-
-    return {
-      user,
-      hasPasskey: userPasskey.length > 0,
-    };
-  });
 
 const getUserPasskeysSchema = z.object({
   userId: z.number().int().positive(),

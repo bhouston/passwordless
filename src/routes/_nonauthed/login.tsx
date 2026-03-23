@@ -1,22 +1,14 @@
-import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
-import { redirectToSchema } from '@/lib/schemas';
 
-export const Route = createFileRoute('/login')({
-  validateSearch: redirectToSchema,
-  beforeLoad: ({ context, search }) => {
-    if (context.sessionUser) {
-      throw redirect({ to: search.redirectTo || '/user-settings' });
-    }
-  },
+export const Route = createFileRoute('/_nonauthed/login')({
   component: LoginPage,
 });
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { redirectTo = '/' } = Route.useSearch();
 
   return (
     <AuthLayout title="Login" subTitle="Choose your preferred login method">
@@ -25,10 +17,7 @@ function LoginPage() {
           <Field>
             <Button
               onClick={() => {
-                void navigate({
-                  to: '/login-passkey',
-                  search: { redirectTo },
-                });
+                void navigate({ to: '/login-passkey' });
               }}
               className="w-full"
             >
@@ -39,10 +28,7 @@ function LoginPage() {
           <Field>
             <Button
               onClick={() => {
-                void navigate({
-                  to: '/login-account-passkey',
-                  search: { redirectTo },
-                });
+                void navigate({ to: '/login-account-passkey' });
               }}
               className="w-full"
               variant="outline"
@@ -60,10 +46,7 @@ function LoginPage() {
           <Field>
             <Button
               onClick={() => {
-                void navigate({
-                  to: '/login-request-code',
-                  search: { redirectTo },
-                });
+                void navigate({ to: '/login-request-code' });
               }}
               className="w-full"
               variant="outline"
@@ -77,7 +60,6 @@ function LoginPage() {
           Don&apos;t have an account?{' '}
           <Link
             className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 hover:decoration-foreground"
-            search={{ redirectTo }}
             to="/signup"
           >
             Sign Up
