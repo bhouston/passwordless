@@ -59,13 +59,7 @@ function LoginAccountPasskeyPage() {
     validators: {
       onChange: accountPasskeyLoginSchema,
     },
-    onSubmit: async ({ value }) => {
-      if (!isWebAuthnSupported()) {
-        setFormError('Passkeys are not supported in this browser. Try another login method.');
-        return;
-      }
-      await loginMutation.mutateAsync(value);
-    },
+    onSubmit: ({ value }) => loginMutation.mutateAsync(value),
   });
 
   if (!isWebAuthnSupported()) {

@@ -127,6 +127,7 @@ describe('Auth passkey flow', () => {
       });
 
       await page.goto(`${baseUrl}/login-passkey`);
+      await page.getByRole('button', { name: /Login with Passkey/i }).click();
 
       await expect(
         page.getByRole('main').getByText(/Authentication was cancelled or not allowed by your device\./i),
@@ -146,6 +147,7 @@ describe('Auth passkey flow', () => {
       });
 
       await page.goto(`${baseUrl}/login-passkey`);
+      await page.getByRole('button', { name: /Login with Passkey/i }).click();
 
       await expect(
         page.getByRole('main').getByText(/No passkey found\. Please login with an email code instead\./i),
