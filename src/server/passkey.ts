@@ -18,10 +18,13 @@ import { passkeys, users } from '@/db/schema';
 import { setSessionUserId } from './appSession';
 import { getEnvConfig } from './env';
 import {
-  signPasskeyChallengeToken,
-  signPasskeyDiscoveryToken,
-  verifyPasskeyChallengeToken,
-  verifyPasskeyDiscoveryToken,
+  PASSKEY_CHALLENGE_TOKEN_EXPIRATION,
+  passkeyChallengeSignSchema,
+  passkeyChallengeVerifiedPayloadSchema,
+  passkeyDiscoverySignSchema,
+  passkeyDiscoveryVerifiedPayloadSchema,
+  signHs256Jwt,
+  verifyHs256Jwt,
 } from './jwt';
 import { requireUser } from './middleware';
 
@@ -98,7 +101,11 @@ export const generateRegistrationOptions = createServerFn({ method: 'POST' })
     const options = await swaGenerateRegistrationOptions(opts);
 
     // Create JWT token with challenge and user identity
-    const token = await signPasskeyChallengeToken(options.challenge, data.userId, user.email);
+    const token = await signHs256Jwt(
+      { challenge: options.challenge, userId: data.userId, email: user.email },
+      passkeyChallengeSignSchema,
+      PASSKEY_CHALLENGE_TOKEN_EXPIRATION,
+    );
 
     return {
       options,
@@ -126,7 +133,7 @@ export const verifyRegistrationResponse = createServerFn({ method: 'POST' })
     }
 
     // Verify token and extract challenge
-    const tokenPayload = await verifyPasskeyChallengeToken(data.token);
+    const tokenPayload = await verifyHs256Jwt(data.token, passkeyChallengeVerifiedPayloadSchema);
     const expectedChallenge = tokenPayload.challenge;
 
     if (tokenPayload.userId !== data.userId) {
@@ -198,7 +205,11 @@ export const initiatePasskeyDiscovery = createServerFn({
   const options = await swaGenerateAuthenticationOptions(opts);
 
   // Create discovery token (challenge only, no userId)
-  const token = await signPasskeyDiscoveryToken(options.challenge);
+  const token = await signHs256Jwt(
+    { challenge: options.challenge },
+    passkeyDiscoverySignSchema,
+    PASSKEY_CHALLENGE_TOKEN_EXPIRATION,
+  );
 
   return {
     options,
@@ -248,7 +259,11 @@ export const initiatePasskeyAuthenticationForEmail = createServerFn({
     };
 
     const options = await swaGenerateAuthenticationOptions(opts);
-    const token = await signPasskeyChallengeToken(options.challenge, user.id, user.email);
+    const token = await signHs256Jwt(
+      { challenge: options.challenge, userId: user.id, email: user.email },
+      passkeyChallengeSignSchema,
+      PASSKEY_CHALLENGE_TOKEN_EXPIRATION,
+    );
 
     return {
       options,
@@ -274,11 +289,11 @@ export const verifyAuthenticationResponse = createServerFn({ method: 'POST' })
     let userId: number | undefined;
 
     try {
-      const discoveryPayload = await verifyPasskeyDiscoveryToken(data.token);
+      const discoveryPayload = await verifyHs256Jwt(data.token, passkeyDiscoveryVerifiedPayloadSchema);
       isDiscovery = true;
       expectedChallenge = discoveryPayload.challenge;
     } catch {
-      const tokenPayload = await verifyPasskeyChallengeToken(data.token);
+      const tokenPayload = await verifyHs256Jwt(data.token, passkeyChallengeVerifiedPayloadSchema);
       expectedChallenge = tokenPayload.challenge;
       userId = tokenPayload.userId;
     }

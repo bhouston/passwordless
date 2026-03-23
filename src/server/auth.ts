@@ -5,7 +5,13 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { clearAppSession, setSessionUserId } from './appSession';
-import { signCodeVerificationToken, verifyCodeVerificationToken } from './jwt';
+import {
+  CODE_VERIFICATION_TOKEN_EXPIRATION,
+  codeVerificationSignInputSchema,
+  codeVerificationVerifiedPayloadSchema,
+  signHs256Jwt,
+  verifyHs256Jwt,
+} from './jwt';
 import { broadcastTestOtp } from './testOtp';
 
 // Zod schemas for validation
@@ -73,14 +79,18 @@ export const requestSignupOTP = createServerFn({ method: 'POST' })
 
     // Generate OTP code
     const code = generateOTPCode();
-    const codeHash = hashOTPCode(code);
+    const otpHash = hashOTPCode(code);
 
-    const token = await signCodeVerificationToken({
-      purpose: 'signup',
-      email: data.email,
-      name: data.name,
-      codeHash,
-    });
+    const token = await signHs256Jwt(
+      {
+        purpose: 'signup',
+        email: data.email,
+        name: data.name,
+        otpHash,
+      },
+      codeVerificationSignInputSchema,
+      CODE_VERIFICATION_TOKEN_EXPIRATION,
+    );
 
     // Console log + SSE broadcast (development/test only)
     broadcastTestOtp({
@@ -103,14 +113,14 @@ export const verifySignupOTPAndCreateUser = createServerFn({
 })
   .inputValidator(verifySignupCodeSchema)
   .handler(async ({ data }) => {
-    const payload = await verifyCodeVerificationToken(data.token);
+    const payload = await verifyHs256Jwt(data.token, codeVerificationVerifiedPayloadSchema);
 
     if (payload.purpose !== 'signup') {
       throw new Error('Invalid code. Please check your email and try again.');
     }
 
-    const submittedCodeHash = hashOTPCode(data.code.toUpperCase());
-    if (payload.codeHash !== submittedCodeHash) {
+    const submittedOtpHash = hashOTPCode(data.code.toUpperCase());
+    if (payload.otpHash !== submittedOtpHash) {
       throw new Error('Invalid code. Please check your email and try again.');
     }
 
@@ -153,14 +163,18 @@ export const requestLoginCode = createServerFn({ method: 'POST' })
     }
 
     const code = generateOTPCode();
-    const codeHash = hashOTPCode(code);
+    const otpHash = hashOTPCode(code);
 
-    const token = await signCodeVerificationToken({
-      purpose: 'login',
-      userId: user.id,
-      email: data.email,
-      codeHash,
-    });
+    const token = await signHs256Jwt(
+      {
+        purpose: 'login',
+        userId: user.id,
+        email: data.email,
+        otpHash,
+      },
+      codeVerificationSignInputSchema,
+      CODE_VERIFICATION_TOKEN_EXPIRATION,
+    );
 
     // Console log + SSE broadcast (development/test only)
     broadcastTestOtp({
@@ -182,14 +196,14 @@ export const verifyLoginCodeAndAuthenticate = createServerFn({
 })
   .inputValidator(verifyLoginCodeSchema)
   .handler(async ({ data }) => {
-    const payload = await verifyCodeVerificationToken(data.token);
+    const payload = await verifyHs256Jwt(data.token, codeVerificationVerifiedPayloadSchema);
 
     if (payload.purpose !== 'login') {
       throw new Error('Invalid code. Please check your email and try again.');
     }
 
-    const submittedCodeHash = hashOTPCode(data.code.toUpperCase());
-    if (payload.codeHash !== submittedCodeHash) {
+    const submittedOtpHash = hashOTPCode(data.code.toUpperCase());
+    if (payload.otpHash !== submittedOtpHash) {
       throw new Error('Invalid code. Please check your email and try again.');
     }
 
