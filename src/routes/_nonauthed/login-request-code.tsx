@@ -27,6 +27,7 @@ function LoginRequestCodePage() {
 
   const requestCodeMutation = useToastMutation({
     action: 'Send login code email',
+    toastSuccess: false,
     toastError: false,
     mutationFn: (variables: { email: string }) => requestLoginCodeFn({ data: variables }),
     onSuccess: async (result, variables) => {
