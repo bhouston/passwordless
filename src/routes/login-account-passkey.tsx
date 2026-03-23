@@ -1,5 +1,4 @@
 import { useForm } from '@tanstack/react-form';
-import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, redirect, useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
@@ -38,7 +37,6 @@ export const Route = createFileRoute('/login-account-passkey')({
 function LoginAccountPasskeyPage() {
   const navigate = useNavigate();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { redirectTo = '/' } = Route.useSearch();
   const [formError, setFormError] = useState<string>();
   const initiateForEmailFn = useServerFn(initiatePasskeyAuthenticationForEmail);
@@ -50,45 +48,20 @@ function LoginAccountPasskeyPage() {
     toastError: false,
     mutationFn: async (variables: { email: string }) => {
       const start = await initiateForEmailFn({ data: variables });
-      if (!start.success || !start.options || !start.token) {
-        throw new Error(start.error || 'Could not start passkey login.');
-      }
 
-      let authenticationResponse: Awaited<ReturnType<typeof startPasskeyAuthentication>>;
-      try {
-        authenticationResponse = await startPasskeyAuthentication({
-          optionsJSON: start.options,
-        });
-      } catch (err) {
-        if (err instanceof Error) {
-          if (err.name === 'NotAllowedError') {
-            throw new Error('Authentication was cancelled or not allowed by your device.', { cause: err });
-          }
-          if (err.name === 'InvalidStateError') {
-            throw new Error('No matching passkey found for this account on this device.', { cause: err });
-          }
-          if (err.name === 'NotSupportedError') {
-            throw new Error('Passkeys are not supported in this browser. Please use a modern browser.', { cause: err });
-          }
-        }
-        throw err;
-      }
+      const authenticationResponse = await startPasskeyAuthentication(
+        { optionsJSON: start.options },
+        { flow: 'account' },
+      );
 
-      const verification = await verifyAuthResponseFn({
+      await verifyAuthResponseFn({
         data: {
           response: authenticationResponse,
           token: start.token,
         },
       });
-
-      if (!verification.success) {
-        throw new Error(verification.error || 'Authentication failed');
-      }
-
-      return verification;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['SESSION'] });
       await router.invalidate();
       await navigate({ to: redirectTo, reloadDocument: true });
     },
@@ -176,13 +149,15 @@ function LoginAccountPasskeyPage() {
             )}
           </form.Subscribe>
 
-          <Field>
-            <Button asChild={true} variant="outline" className="w-full">
-              <Link search={{ redirectTo }} to="/login">
-                Other login options
-              </Link>
-            </Button>
-          </Field>
+          <div className="text-center text-sm text-muted-foreground">
+            <Link
+              className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 hover:decoration-foreground"
+              search={redirectTo ? { redirectTo } : undefined}
+              to="/login"
+            >
+              Back to Login
+            </Link>
+          </div>
         </FieldGroup>
       </form>
     </AuthLayout>

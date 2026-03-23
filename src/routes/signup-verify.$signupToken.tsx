@@ -12,7 +12,7 @@ import { useToastMutation } from '@/hooks/useToastMutation';
 import { verifySignupOTPAndCreateUser } from '@/server/auth';
 import { validateCodeVerificationToken } from '@/server/jwt';
 
-export const Route = createFileRoute('/signup/$signupToken')({
+export const Route = createFileRoute('/signup-verify/$signupToken')({
   beforeLoad: async ({ params }) => {
     try {
       // Verify token exists and is valid format (but don't create user yet)
@@ -41,18 +41,14 @@ function SignupPage() {
 
   const verifyCodeMutation = useToastMutation({
     action: 'Verify signup code',
-    mutationFn: async (variables: { code: string }) => {
-      const result = await verifySignupFn({
+    mutationFn: (variables: { code: string }) =>
+      verifySignupFn({
         data: {
           token: signupToken,
           code: variables.code.toUpperCase(),
         },
-      });
-      return result;
-    },
-    onSuccess: async () => {
-      await navigate({ to: '/user-settings' });
-    },
+      }),
+    onSuccess: () => navigate({ to: '/user-settings' }),
     setFormError,
   });
 
@@ -68,9 +64,7 @@ function SignupPage() {
           .regex(/^[A-Z0-9]{8}$/, 'Code must be alphanumeric (A-Z, 0-9)'),
       }),
     },
-    onSubmit: async ({ value }) => {
-      await verifyCodeMutation.mutateAsync(value);
-    },
+    onSubmit: ({ value }) => verifyCodeMutation.mutateAsync(value),
   });
 
   if (!tokenValid) {

@@ -17,7 +17,7 @@ import { Route as LoginAccountPasskeyRouteImport } from './routes/login-account-
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SignupSignupTokenRouteImport } from './routes/signup.$signupToken'
+import { Route as SignupVerifySignupTokenRouteImport } from './routes/signup-verify.$signupToken'
 import { Route as LoginViaCodeCodeVerificationTokenRouteImport } from './routes/login-via-code.$codeVerificationToken'
 import { Route as ApiOtpLatestRouteImport } from './routes/api/otp-latest'
 import { Route as AuthedUserSettingsRouteImport } from './routes/_authed/user-settings'
@@ -61,10 +61,10 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignupSignupTokenRoute = SignupSignupTokenRouteImport.update({
-  id: '/$signupToken',
-  path: '/$signupToken',
-  getParentRoute: () => SignupRoute,
+const SignupVerifySignupTokenRoute = SignupVerifySignupTokenRouteImport.update({
+  id: '/signup-verify/$signupToken',
+  path: '/signup-verify/$signupToken',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LoginViaCodeCodeVerificationTokenRoute =
   LoginViaCodeCodeVerificationTokenRouteImport.update({
@@ -90,11 +90,11 @@ export interface FileRoutesByFullPath {
   '/login-passkey': typeof LoginPasskeyRoute
   '/login-request-code': typeof LoginRequestCodeRoute
   '/logout': typeof LogoutRoute
-  '/signup': typeof SignupRouteWithChildren
+  '/signup': typeof SignupRoute
   '/user-settings': typeof AuthedUserSettingsRoute
   '/api/otp-latest': typeof ApiOtpLatestRoute
   '/login-via-code/$codeVerificationToken': typeof LoginViaCodeCodeVerificationTokenRoute
-  '/signup/$signupToken': typeof SignupSignupTokenRoute
+  '/signup-verify/$signupToken': typeof SignupVerifySignupTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -103,11 +103,11 @@ export interface FileRoutesByTo {
   '/login-passkey': typeof LoginPasskeyRoute
   '/login-request-code': typeof LoginRequestCodeRoute
   '/logout': typeof LogoutRoute
-  '/signup': typeof SignupRouteWithChildren
+  '/signup': typeof SignupRoute
   '/user-settings': typeof AuthedUserSettingsRoute
   '/api/otp-latest': typeof ApiOtpLatestRoute
   '/login-via-code/$codeVerificationToken': typeof LoginViaCodeCodeVerificationTokenRoute
-  '/signup/$signupToken': typeof SignupSignupTokenRoute
+  '/signup-verify/$signupToken': typeof SignupVerifySignupTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,11 +118,11 @@ export interface FileRoutesById {
   '/login-passkey': typeof LoginPasskeyRoute
   '/login-request-code': typeof LoginRequestCodeRoute
   '/logout': typeof LogoutRoute
-  '/signup': typeof SignupRouteWithChildren
+  '/signup': typeof SignupRoute
   '/_authed/user-settings': typeof AuthedUserSettingsRoute
   '/api/otp-latest': typeof ApiOtpLatestRoute
   '/login-via-code/$codeVerificationToken': typeof LoginViaCodeCodeVerificationTokenRoute
-  '/signup/$signupToken': typeof SignupSignupTokenRoute
+  '/signup-verify/$signupToken': typeof SignupVerifySignupTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,7 +137,7 @@ export interface FileRouteTypes {
     | '/user-settings'
     | '/api/otp-latest'
     | '/login-via-code/$codeVerificationToken'
-    | '/signup/$signupToken'
+    | '/signup-verify/$signupToken'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,7 +150,7 @@ export interface FileRouteTypes {
     | '/user-settings'
     | '/api/otp-latest'
     | '/login-via-code/$codeVerificationToken'
-    | '/signup/$signupToken'
+    | '/signup-verify/$signupToken'
   id:
     | '__root__'
     | '/'
@@ -164,7 +164,7 @@ export interface FileRouteTypes {
     | '/_authed/user-settings'
     | '/api/otp-latest'
     | '/login-via-code/$codeVerificationToken'
-    | '/signup/$signupToken'
+    | '/signup-verify/$signupToken'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -175,9 +175,10 @@ export interface RootRouteChildren {
   LoginPasskeyRoute: typeof LoginPasskeyRoute
   LoginRequestCodeRoute: typeof LoginRequestCodeRoute
   LogoutRoute: typeof LogoutRoute
-  SignupRoute: typeof SignupRouteWithChildren
+  SignupRoute: typeof SignupRoute
   ApiOtpLatestRoute: typeof ApiOtpLatestRoute
   LoginViaCodeCodeVerificationTokenRoute: typeof LoginViaCodeCodeVerificationTokenRoute
+  SignupVerifySignupTokenRoute: typeof SignupVerifySignupTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -238,12 +239,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signup/$signupToken': {
-      id: '/signup/$signupToken'
-      path: '/$signupToken'
-      fullPath: '/signup/$signupToken'
-      preLoaderRoute: typeof SignupSignupTokenRouteImport
-      parentRoute: typeof SignupRoute
+    '/signup-verify/$signupToken': {
+      id: '/signup-verify/$signupToken'
+      path: '/signup-verify/$signupToken'
+      fullPath: '/signup-verify/$signupToken'
+      preLoaderRoute: typeof SignupVerifySignupTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/login-via-code/$codeVerificationToken': {
       id: '/login-via-code/$codeVerificationToken'
@@ -280,17 +281,6 @@ const AuthedRouteChildren: AuthedRouteChildren = {
 const AuthedRouteWithChildren =
   AuthedRoute._addFileChildren(AuthedRouteChildren)
 
-interface SignupRouteChildren {
-  SignupSignupTokenRoute: typeof SignupSignupTokenRoute
-}
-
-const SignupRouteChildren: SignupRouteChildren = {
-  SignupSignupTokenRoute: SignupSignupTokenRoute,
-}
-
-const SignupRouteWithChildren =
-  SignupRoute._addFileChildren(SignupRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthedRoute: AuthedRouteWithChildren,
@@ -299,10 +289,11 @@ const rootRouteChildren: RootRouteChildren = {
   LoginPasskeyRoute: LoginPasskeyRoute,
   LoginRequestCodeRoute: LoginRequestCodeRoute,
   LogoutRoute: LogoutRoute,
-  SignupRoute: SignupRouteWithChildren,
+  SignupRoute: SignupRoute,
   ApiOtpLatestRoute: ApiOtpLatestRoute,
   LoginViaCodeCodeVerificationTokenRoute:
     LoginViaCodeCodeVerificationTokenRoute,
+  SignupVerifySignupTokenRoute: SignupVerifySignupTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

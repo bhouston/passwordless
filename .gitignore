@@ -11,8 +11,5 @@ count.txt
 .output
 .vinxi
 todos.json
-db.sqlite
-test-results/.last-run.json
-test-results/auth-passkey-flow-Auth-pas-45ae1--no-credential-is-available-chromium/error-context.md
-test-results/auth-passkey-flow-Auth-pas-b0572--passkey-setup-is-cancelled-chromium/error-context.md
-test-results/auth-passkey-flow-Auth-pas-ca525-hentication-cancelled-error-chromium/error-context.md
+test-results
+*.sqlite

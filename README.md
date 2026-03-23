@@ -135,7 +135,6 @@ pnpm format
 
 - [TanStack Start](https://tanstack.com/start) (React, SSR, server functions; [`useSession`](https://tanstack.com/start) for login sessions)
 - [TanStack Router](https://tanstack.com/router) (file-based routes, including `_authed` layout routes)
-- [TanStack Query](https://tanstack.com/query) (client data fetching)
 - [TanStack Form](https://tanstack.com/form) (forms)
 - [Drizzle ORM](https://orm.drizzle.team/) + SQLite
 - [SimpleWebAuthn](https://simplewebauthn.dev/) for WebAuthn

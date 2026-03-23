@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import { useCallback, useEffect, useState } from 'react';
 import type { UserPasskeyListItem } from '@/server/user';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldSet } from '@/components/ui/field';
@@ -46,63 +46,54 @@ export function PasskeyComponent({ userId, userName, userDisplayName }: PasskeyC
   const deletePasskeyFn = useServerFn(deletePasskey);
   const getUserPasskeysFn = useServerFn(getUserPasskeys);
 
-  const passkeysQuery = useQuery({
-    queryKey: ['PASSKEYS', userId],
-    queryFn: async () => getUserPasskeysFn({ data: { userId } }),
-  });
+  const [passkeys, setPasskeys] = useState<UserPasskeyListItem[] | undefined>(undefined);
+  const [loadError, setLoadError] = useState<Error | null>(null);
+
+  const refetchPasskeys = useCallback(async () => {
+    try {
+      const list = await getUserPasskeysFn({ data: { userId } });
+      setPasskeys(list);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err : new Error('Failed to load passkeys.'));
+      setPasskeys([]);
+    }
+  }, [getUserPasskeysFn, userId]);
+
+  useEffect(() => {
+    void refetchPasskeys();
+  }, [refetchPasskeys]);
 
   // Mutation for adding a passkey
   const addPasskeyMutation = useToastMutation({
     action: 'Passkey registration',
-    queryKey: ['PASSKEYS', userId],
     mutationFn: async () => {
-      try {
-        const result = await generateRegistrationOptionsFn({
-          data: {
-            userId,
-            userName,
-            userDisplayName,
-          },
-        });
+      const result = await generateRegistrationOptionsFn({
+        data: {
+          userId,
+          userName,
+          userDisplayName,
+        },
+      });
 
-        if (!result.options || !result.token) {
-          throw new Error('Failed to generate registration options');
-        }
-
-        const registrationResponse = await startPasskeyRegistration({
-          optionsJSON: result.options,
-        });
-
-        const verification = await verifyRegistrationResponseFn({
-          data: {
-            response: registrationResponse,
-            userId,
-            token: result.token,
-          },
-        });
-
-        if (!verification.success) {
-          throw new Error(verification.error || 'Failed to register passkey');
-        }
-
-        return verification;
-      } catch (err) {
-        if (err instanceof Error) {
-          if (
-            err.message.includes('cancelled') ||
-            err.message.includes('abort') ||
-            err.message.includes('NotAllowedError')
-          ) {
-            throw new Error('Registration cancelled', { cause: err });
-          }
-          if (err.message.includes('NotSupportedError')) {
-            throw new Error('Passkeys are not supported on this device or browser', { cause: err });
-          }
-        }
-        throw err;
+      if (!result.options || !result.token) {
+        throw new Error('Failed to generate registration options');
       }
+
+      const registrationResponse = await startPasskeyRegistration({
+        optionsJSON: result.options,
+      });
+
+      await verifyRegistrationResponseFn({
+        data: {
+          response: registrationResponse,
+          userId,
+          token: result.token,
+        },
+      });
     },
     onSuccess: async () => {
+      await refetchPasskeys();
       void router.invalidate();
     },
   });
@@ -110,11 +101,11 @@ export function PasskeyComponent({ userId, userName, userDisplayName }: PasskeyC
   // Mutation for deleting a passkey
   const deletePasskeyMutation = useToastMutation({
     action: 'Passkey deletion',
-    queryKey: ['PASSKEYS', userId],
     mutationFn: async (passkeyId: number) => {
       return await deletePasskeyFn({ data: { userId, passkeyId } });
     },
     onSuccess: async () => {
+      await refetchPasskeys();
       void router.invalidate();
     },
   });
@@ -127,10 +118,10 @@ export function PasskeyComponent({ userId, userName, userDisplayName }: PasskeyC
     deletePasskeyMutation.mutate(passkey.id);
   };
 
-  const passkeys = passkeysQuery.data ?? [];
-  const hasPasskeys = passkeys.length > 0;
+  const passkeyList = passkeys ?? [];
+  const hasPasskeys = passkeyList.length > 0;
   const isLoading = addPasskeyMutation.isPending || deletePasskeyMutation.isPending;
-  const isInitialLoad = passkeysQuery.isPending && !passkeysQuery.data;
+  const isInitialLoad = passkeys === undefined;
 
   return (
     <div className="border border-border bg-card p-6">
@@ -144,14 +135,10 @@ export function PasskeyComponent({ userId, userName, userDisplayName }: PasskeyC
 
       <FieldSet>
         <FieldGroup>
-          {passkeysQuery.isError && (
-            <FieldError className="mb-4">
-              {passkeysQuery.error instanceof Error ? passkeysQuery.error.message : 'Failed to load passkeys.'}
-            </FieldError>
-          )}
+          {loadError && <FieldError className="mb-4">{loadError.message}</FieldError>}
 
           <Field>
-            <Button onClick={handleAddPasskey} disabled={isLoading || passkeysQuery.isPending}>
+            <Button onClick={handleAddPasskey} disabled={isLoading || isInitialLoad}>
               {addPasskeyMutation.isPending ? 'Registering...' : hasPasskeys ? 'Add Passkey' : 'Add Your First Passkey'}
             </Button>
           </Field>
@@ -175,7 +162,7 @@ export function PasskeyComponent({ userId, userName, userDisplayName }: PasskeyC
               </div>
             )}
 
-            {passkeys.map((passkey) => {
+            {passkeyList.map((passkey) => {
               const createdAt = formatPasskeyDate(passkey.createdAt);
               const lastUsedAt = formatPasskeyDate(passkey.lastUsedAt);
 

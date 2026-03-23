@@ -125,81 +125,59 @@ export const verifyRegistrationResponse = createServerFn({ method: 'POST' })
       throw new Error('Not authorized');
     }
 
-    try {
-      // Verify token and extract challenge
-      const tokenPayload = await verifyPasskeyChallengeToken(data.token);
-      const expectedChallenge = tokenPayload.challenge;
+    // Verify token and extract challenge
+    const tokenPayload = await verifyPasskeyChallengeToken(data.token);
+    const expectedChallenge = tokenPayload.challenge;
 
-      // Verify the userId matches
-      if (tokenPayload.userId !== data.userId) {
-        return {
-          success: false,
-          error: 'Token user ID does not match',
-        };
-      }
-
-      const env = getEnvConfig();
-      const opts: VerifyRegistrationResponseOpts = {
-        response: data.response as any,
-        expectedChallenge,
-        expectedOrigin: env.ORIGIN,
-        expectedRPID: env.RP_ID,
-        requireUserVerification: true,
-      };
-
-      const verification = await swaVerifyRegistrationResponse(opts);
-
-      if (!verification.verified || !verification.registrationInfo) {
-        return {
-          success: false,
-          error: 'Registration verification failed',
-        };
-      }
-
-      const registrationInfo = verification.registrationInfo;
-      const { credential } = registrationInfo;
-      const counter = credential.counter ?? 0;
-      const transports = credential.transports;
-      const authenticatorType =
-        registrationInfo.credentialDeviceType === 'singleDevice' ? 'platform' : 'cross-platform';
-      const name = buildPasskeyNameFromRequest();
-
-      const existingCredential = await db
-        .select({
-          id: passkeys.id,
-        })
-        .from(passkeys)
-        .where(eq(passkeys.credentialId, credential.id))
-        .limit(1);
-
-      if (existingCredential.length > 0) {
-        return {
-          success: false,
-          error: 'This passkey is already registered.',
-        };
-      }
-
-      // Convert publicKey (Uint8Array) to base64url for storage
-      const publicKeyBase64 = Buffer.from(credential.publicKey).toString('base64url');
-
-      // Store passkey in database
-      await db.insert(passkeys).values({
-        userId: data.userId,
-        credentialId: credential.id,
-        publicKey: publicKeyBase64,
-        counter,
-        authenticatorType,
-        name,
-        transports: transports ? JSON.stringify(transports) : null,
-      });
-
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Registration verification failed',
-      };
+    if (tokenPayload.userId !== data.userId) {
+      throw new Error('Token user ID does not match');
     }
+
+    const env = getEnvConfig();
+    const opts: VerifyRegistrationResponseOpts = {
+      response: data.response as any,
+      expectedChallenge,
+      expectedOrigin: env.ORIGIN,
+      expectedRPID: env.RP_ID,
+      requireUserVerification: true,
+    };
+
+    const verification = await swaVerifyRegistrationResponse(opts);
+
+    if (!verification.verified || !verification.registrationInfo) {
+      throw new Error('Registration verification failed');
+    }
+
+    const registrationInfo = verification.registrationInfo;
+    const { credential } = registrationInfo;
+    const counter = credential.counter ?? 0;
+    const transports = credential.transports;
+    const authenticatorType = registrationInfo.credentialDeviceType === 'singleDevice' ? 'platform' : 'cross-platform';
+    const name = buildPasskeyNameFromRequest();
+
+    const existingCredential = await db
+      .select({
+        id: passkeys.id,
+      })
+      .from(passkeys)
+      .where(eq(passkeys.credentialId, credential.id))
+      .limit(1);
+
+    if (existingCredential.length > 0) {
+      throw new Error('This passkey is already registered.');
+    }
+
+    const publicKeyBase64 = Buffer.from(credential.publicKey).toString('base64url');
+
+    await db.insert(passkeys).values({
+      userId: data.userId,
+      credentialId: credential.id,
+      publicKey: publicKeyBase64,
+      counter,
+      authenticatorType,
+      name,
+      transports: transports ? JSON.stringify(transports) : null,
+    });
   });
 
 /**
@@ -223,7 +201,6 @@ export const initiatePasskeyDiscovery = createServerFn({
   const token = await signPasskeyDiscoveryToken(options.challenge);
 
   return {
-    success: true,
     options,
     token,
   };
@@ -247,19 +224,15 @@ export const initiatePasskeyAuthenticationForEmail = createServerFn({
     const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     if (!user) {
-      return {
-        success: false,
-        error: 'This email is not registered. Please sign up to create an account.',
-      };
+      throw new Error('This email is not registered. Please sign up to create an account.');
     }
 
     const passkeyRows = await db.select().from(passkeys).where(eq(passkeys.userId, user.id));
 
     if (passkeyRows.length === 0) {
-      return {
-        success: false,
-        error: 'This account does not have a passkey yet. Login with an email code and add a passkey in settings.',
-      };
+      throw new Error(
+        'This account does not have a passkey yet. Login with an email code and add a passkey in settings.',
+      );
     }
 
     const env = getEnvConfig();
@@ -278,7 +251,6 @@ export const initiatePasskeyAuthenticationForEmail = createServerFn({
     const token = await signPasskeyChallengeToken(options.challenge, user.id, user.email);
 
     return {
-      success: true,
       options,
       token,
     };
@@ -297,151 +269,95 @@ const verifyAuthenticationResponseSchema = z.object({
 export const verifyAuthenticationResponse = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => verifyAuthenticationResponseSchema.parse(data))
   .handler(async ({ data }) => {
+    let isDiscovery = false;
+    let expectedChallenge: string;
+    let userId: number | undefined;
+
     try {
-      // Try to verify as discovery token first (challenge only)
-      let isDiscovery = false;
-      let expectedChallenge: string;
-      let userId: number | undefined;
-
-      try {
-        const discoveryPayload = await verifyPasskeyDiscoveryToken(data.token);
-        isDiscovery = true;
-        expectedChallenge = discoveryPayload.challenge;
-      } catch {
-        // Not a discovery token, try regular token
-        const tokenPayload = await verifyPasskeyChallengeToken(data.token);
-        expectedChallenge = tokenPayload.challenge;
-        userId = tokenPayload.userId;
-      }
-
-      const response = data.response as { id?: string };
-      const credentialId = response.id;
-      if (!credentialId) {
-        return {
-          success: false,
-          error: 'Credential ID missing from passkey response',
-        };
-      }
-
-      let passkey: typeof passkeys.$inferSelect;
-      if (isDiscovery) {
-        // Find passkey by credentialId
-        const passkeysFound = await db.select().from(passkeys).where(eq(passkeys.credentialId, credentialId)).limit(1);
-
-        if (passkeysFound.length === 0) {
-          return {
-            success: false,
-            error: 'Passkey not found',
-          };
-        }
-
-        const foundPasskey = passkeysFound[0];
-        if (!foundPasskey) {
-          return {
-            success: false,
-            error: 'Passkey not found',
-          };
-        }
-
-        passkey = foundPasskey;
-        userId = passkey.userId;
-      } else {
-        if (!userId) {
-          return {
-            success: false,
-            error: 'Invalid token',
-          };
-        }
-
-        const matchedPasskeys = await db
-          .select()
-          .from(passkeys)
-          .where(eq(passkeys.credentialId, credentialId))
-          .limit(1);
-
-        if (matchedPasskeys.length === 0) {
-          return {
-            success: false,
-            error: 'Passkey not found',
-          };
-        }
-
-        const userPk = matchedPasskeys[0];
-        if (!userPk) {
-          return {
-            success: false,
-            error: 'Passkey not found',
-          };
-        }
-
-        if (userPk.userId !== userId) {
-          return {
-            success: false,
-            error: 'This passkey does not match that account',
-          };
-        }
-
-        passkey = userPk;
-      }
-
-      // Convert base64url back to Uint8Array
-      const publicKeyBuffer = Buffer.from(passkey.publicKey, 'base64url');
-      const publicKey = new Uint8Array(publicKeyBuffer.buffer, publicKeyBuffer.byteOffset, publicKeyBuffer.byteLength);
-
-      const env = getEnvConfig();
-      const opts: VerifyAuthenticationResponseOpts = {
-        response: data.response as any,
-        expectedChallenge,
-        expectedOrigin: env.ORIGIN,
-        expectedRPID: env.RP_ID,
-        credential: {
-          id: passkey.credentialId,
-          publicKey,
-          counter: passkey.counter,
-        },
-        requireUserVerification: true,
-      };
-
-      const verification = await swaVerifyAuthenticationResponse(opts);
-
-      if (!verification.verified) {
-        return {
-          success: false,
-          error: 'Authentication verification failed',
-        };
-      }
-
-      // Signature counter is already validated by SimpleWebAuthn (only rejects when
-      // (counter > 0 || credential.counter > 0) && counter <= credential.counter, so 0/0 is allowed).
-      // Just persist the new counter for next time.
-      if (verification.authenticationInfo) {
-        const newCounter = verification.authenticationInfo.newCounter;
-        await db
-          .update(passkeys)
-          .set({
-            counter: newCounter,
-            lastUsedAt: new Date(),
-          })
-          .where(eq(passkeys.id, passkey.id));
-      }
-
-      // Set authentication cookie on successful verification
-      if (!userId) {
-        return {
-          success: false,
-          error: 'User ID not found',
-        };
-      }
-
-      await setSessionUserId(userId);
-
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Authentication verification failed',
-      };
+      const discoveryPayload = await verifyPasskeyDiscoveryToken(data.token);
+      isDiscovery = true;
+      expectedChallenge = discoveryPayload.challenge;
+    } catch {
+      const tokenPayload = await verifyPasskeyChallengeToken(data.token);
+      expectedChallenge = tokenPayload.challenge;
+      userId = tokenPayload.userId;
     }
+
+    const response = data.response as { id?: string };
+    const credentialId = response.id;
+    if (!credentialId) {
+      throw new Error('Credential ID missing from passkey response');
+    }
+
+    let passkey: typeof passkeys.$inferSelect;
+    if (isDiscovery) {
+      const passkeysFound = await db.select().from(passkeys).where(eq(passkeys.credentialId, credentialId)).limit(1);
+
+      const foundPasskey = passkeysFound[0];
+      if (!foundPasskey) {
+        throw new Error('Passkey not found');
+      }
+
+      passkey = foundPasskey;
+      userId = passkey.userId;
+    } else {
+      if (!userId) {
+        throw new Error('Invalid token');
+      }
+
+      const matchedPasskeys = await db.select().from(passkeys).where(eq(passkeys.credentialId, credentialId)).limit(1);
+
+      const userPk = matchedPasskeys[0];
+      if (!userPk) {
+        throw new Error('Passkey not found');
+      }
+
+      if (userPk.userId !== userId) {
+        throw new Error('This passkey does not match that account');
+      }
+
+      passkey = userPk;
+    }
+
+    const publicKeyBuffer = Buffer.from(passkey.publicKey, 'base64url');
+    const publicKey = new Uint8Array(publicKeyBuffer.buffer, publicKeyBuffer.byteOffset, publicKeyBuffer.byteLength);
+
+    const env = getEnvConfig();
+    const opts: VerifyAuthenticationResponseOpts = {
+      response: data.response as any,
+      expectedChallenge,
+      expectedOrigin: env.ORIGIN,
+      expectedRPID: env.RP_ID,
+      credential: {
+        id: passkey.credentialId,
+        publicKey,
+        counter: passkey.counter,
+      },
+      requireUserVerification: true,
+    };
+
+    const verification = await swaVerifyAuthenticationResponse(opts);
+
+    if (!verification.verified) {
+      throw new Error('Authentication verification failed');
+    }
+
+    if (verification.authenticationInfo) {
+      const newCounter = verification.authenticationInfo.newCounter;
+      await db
+        .update(passkeys)
+        .set({
+          counter: newCounter,
+          lastUsedAt: new Date(),
+        })
+        .where(eq(passkeys.id, passkey.id));
+    }
+
+    if (!userId) {
+      throw new Error('User ID not found');
+    }
+
+    await setSessionUserId(userId);
   });
 
 const deletePasskeySchema = z.object({
@@ -463,5 +379,4 @@ export const deletePasskey = createServerFn({ method: 'POST' })
     }
 
     await db.delete(passkeys).where(and(eq(passkeys.userId, data.userId), eq(passkeys.id, data.passkeyId)));
-    return { success: true };
   });

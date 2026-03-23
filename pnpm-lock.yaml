@@ -36,20 +36,14 @@ importers:
         specifier: ^1.27.7
         version: 1.27.7(@tanstack/react-start@1.154.1(crossws@0.4.3(srvx@0.10.1))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@8.0.1(@types/node@22.19.7)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0)))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.90.19(react@19.2.3)
-      '@tanstack/react-query-devtools':
-        specifier: ^5.0.0
-        version: 5.91.2(@tanstack/react-query@5.90.19(react@19.2.3))(react@19.2.3)
+        specifier: ^5.95.2
+        version: 5.95.2(react@19.2.3)
       '@tanstack/react-router':
         specifier: ^1.132.0
         version: 1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@tanstack/react-router-devtools':
         specifier: ^1.132.0
         version: 1.154.1(@tanstack/react-router@1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@tanstack/router-core@1.154.1)(csstype@3.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@tanstack/react-router-ssr-query':
-        specifier: ^1.131.7
-        version: 1.154.1(@tanstack/query-core@5.90.19)(@tanstack/react-query@5.90.19(react@19.2.3))(@tanstack/react-router@1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@tanstack/router-core@1.154.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@tanstack/react-start':
         specifier: ^1.132.0
         version: 1.154.1(crossws@0.4.3(srvx@0.10.1))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@8.0.1(@types/node@22.19.7)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0))
@@ -1892,11 +1886,8 @@ packages:
     resolution: {integrity: sha512-y/xtNPNt/YeyoVxE/JCx+T7yjEzpezmbb+toK8DDD1P4m7Kzs5YR956+7OKexG3f8aXgC3rLZl7b1V+yNUSy5w==}
     engines: {node: '>=18'}
 
-  '@tanstack/query-core@5.90.19':
-    resolution: {integrity: sha512-GLW5sjPVIvH491VV1ufddnfldyVB+teCnpPIvweEfkpRx7CfUmUGhoh9cdcUKBh/KwVxk22aNEDxeTsvmyB/WA==}
-
-  '@tanstack/query-devtools@5.92.0':
-    resolution: {integrity: sha512-N8D27KH1vEpVacvZgJL27xC6yPFUy0Zkezn5gnB3L3gRCxlDeSuiya7fKge8Y91uMTnC8aSxBQhcK6ocY7alpQ==}
+  '@tanstack/query-core@5.95.2':
+    resolution: {integrity: sha512-o4T8vZHZET4Bib3jZ/tCW9/7080urD4c+0/AUaYVpIqOsr7y0reBc1oX3ttNaSW5mYyvZHctiQ/UOP2PfdmFEQ==}
 
   '@tanstack/react-devtools@0.7.11':
     resolution: {integrity: sha512-a2Lmz8x+JoDrsU6f7uKRcyyY+k8mA/n5mb9h7XJ3Fz/y3+sPV9t7vAW1s5lyNkQyyDt6V1Oim99faLthoJSxMw==}
@@ -1916,14 +1907,8 @@ packages:
       '@tanstack/react-start':
         optional: true
 
-  '@tanstack/react-query-devtools@5.91.2':
-    resolution: {integrity: sha512-ZJ1503ay5fFeEYFUdo7LMNFzZryi6B0Cacrgr2h1JRkvikK1khgIq6Nq2EcblqEdIlgB/r7XDW8f8DQ89RuUgg==}
-    peerDependencies:
-      '@tanstack/react-query': ^5.90.14
-      react: ^18 || ^19
-
-  '@tanstack/react-query@5.90.19':
-    resolution: {integrity: sha512-qTZRZ4QyTzQc+M0IzrbKHxSeISUmRB3RPGmao5bT+sI6ayxSRhn0FXEnT5Hg3as8SBFcRosrXXRFB+yAcxVxJQ==}
+  '@tanstack/react-query@5.95.2':
+    resolution: {integrity: sha512-/wGkvLj/st5Ud1Q76KF1uFxScV7WeqN1slQx5280ycwAyYkIPGaRZAEgHxe3bjirSd5Zpwkj6zNcR4cqYni/ZA==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -1938,16 +1923,6 @@ packages:
     peerDependenciesMeta:
       '@tanstack/router-core':
         optional: true
-
-  '@tanstack/react-router-ssr-query@1.154.1':
-    resolution: {integrity: sha512-3eTNNjD2Vm8GFrtJ7ZIc23t0u2nRju/t2u4PSVTNi9G+EkrFzOC0y2KO0poSj95i7qh4+x9+Y3Vm5d6mr+JEjw==}
-    engines: {node: '>=12'}
-    peerDependencies:
-      '@tanstack/query-core': '>=5.90.0'
-      '@tanstack/react-query': '>=5.90.0'
-      '@tanstack/react-router': '>=1.127.0'
-      react: '>=18.0.0 || >=19.0.0'
-      react-dom: '>=18.0.0 || >=19.0.0'
 
   '@tanstack/react-router@1.154.1':
     resolution: {integrity: sha512-kOcRZLR99t3hIxyNNjK3FYGdBLdFsDh4Jz0v2gLjrgnlSaDEYR1yE6Cw/S5oruvcjTUNJ3KNI3clJs+VzJAdrA==}
@@ -2022,13 +1997,6 @@ packages:
         optional: true
       webpack:
         optional: true
-
-  '@tanstack/router-ssr-query-core@1.154.1':
-    resolution: {integrity: sha512-WewDBJ1e2LmsCSCnC8Emp5uVt0Hd/SelXpDlTEQam94/c00AtX++htbAS6r/Ar70KtheDsgHMZJqzkOu80RPBQ==}
-    engines: {node: '>=12'}
-    peerDependencies:
-      '@tanstack/query-core': '>=5.90.0'
-      '@tanstack/router-core': '>=1.127.0'
 
   '@tanstack/router-utils@1.143.11':
     resolution: {integrity: sha512-N24G4LpfyK8dOlnP8BvNdkuxg1xQljkyl6PcrdiPSA301pOjatRT1y8wuCCJZKVVD8gkd0MpCZ0VEjRMGILOtA==}
@@ -4861,9 +4829,7 @@ snapshots:
 
   '@tanstack/pacer-lite@0.1.1': {}
 
-  '@tanstack/query-core@5.90.19': {}
-
-  '@tanstack/query-devtools@5.92.0': {}
+  '@tanstack/query-core@5.95.2': {}
 
   '@tanstack/react-devtools@0.7.11(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(csstype@3.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(solid-js@1.9.10)':
     dependencies:
@@ -4888,15 +4854,9 @@ snapshots:
     transitivePeerDependencies:
       - react-dom
 
-  '@tanstack/react-query-devtools@5.91.2(@tanstack/react-query@5.90.19(react@19.2.3))(react@19.2.3)':
+  '@tanstack/react-query@5.95.2(react@19.2.3)':
     dependencies:
-      '@tanstack/query-devtools': 5.92.0
-      '@tanstack/react-query': 5.90.19(react@19.2.3)
-      react: 19.2.3
-
-  '@tanstack/react-query@5.90.19(react@19.2.3)':
-    dependencies:
-      '@tanstack/query-core': 5.90.19
+      '@tanstack/query-core': 5.95.2
       react: 19.2.3
 
   '@tanstack/react-router-devtools@1.154.1(@tanstack/react-router@1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@tanstack/router-core@1.154.1)(csstype@3.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
@@ -4909,17 +4869,6 @@ snapshots:
       '@tanstack/router-core': 1.154.1
     transitivePeerDependencies:
       - csstype
-
-  '@tanstack/react-router-ssr-query@1.154.1(@tanstack/query-core@5.90.19)(@tanstack/react-query@5.90.19(react@19.2.3))(@tanstack/react-router@1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@tanstack/router-core@1.154.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
-    dependencies:
-      '@tanstack/query-core': 5.90.19
-      '@tanstack/react-query': 5.90.19(react@19.2.3)
-      '@tanstack/react-router': 1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@tanstack/router-ssr-query-core': 1.154.1(@tanstack/query-core@5.90.19)(@tanstack/router-core@1.154.1)
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
-    transitivePeerDependencies:
-      - '@tanstack/router-core'
 
   '@tanstack/react-router@1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
@@ -5034,11 +4983,6 @@ snapshots:
       vite: 8.0.1(@types/node@22.19.7)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0)
     transitivePeerDependencies:
       - supports-color
-
-  '@tanstack/router-ssr-query-core@1.154.1(@tanstack/query-core@5.90.19)(@tanstack/router-core@1.154.1)':
-    dependencies:
-      '@tanstack/query-core': 5.90.19
-      '@tanstack/router-core': 1.154.1
 
   '@tanstack/router-utils@1.143.11':
     dependencies:

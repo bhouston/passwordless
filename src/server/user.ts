@@ -57,10 +57,7 @@ export const updateUserName = createServerFn({ method: 'POST' })
       throw new Error('User not found');
     }
 
-    return {
-      success: true,
-      user: updatedUser,
-    };
+    return { user: updatedUser };
   });
 
 /**

@@ -3,24 +3,12 @@ import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { redirectToSchema } from '@/lib/schemas';
-import { getUserWithPasskey } from '@/server/user';
 
 export const Route = createFileRoute('/login')({
   validateSearch: redirectToSchema,
-  beforeLoad: async ({ search }) => {
-    // Check if user is already logged in
-    try {
-      await getUserWithPasskey({});
-      // User is logged in, redirect to user settings (or redirectTo if provided)
-      throw redirect({
-        to: search.redirectTo || '/user-settings',
-      });
-    } catch (error) {
-      // If it's a redirect, re-throw it
-      if (error && typeof error === 'object' && 'to' in error) {
-        throw error;
-      }
-      // Otherwise, user is not logged in, continue to login page
+  beforeLoad: ({ context, search }) => {
+    if (context.sessionUser) {
+      throw redirect({ to: search.redirectTo || '/user-settings' });
     }
   },
   component: LoginPage,

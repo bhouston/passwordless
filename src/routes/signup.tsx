@@ -1,5 +1,5 @@
 import { useForm } from '@tanstack/react-form';
-import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { useToastMutation } from '@/hooks/useToastMutation';
 import { showLastOtpToast } from '@/lib/demoOtpToast';
 import { requestSignupOTP } from '@/server/auth';
-import { getUserWithPasskey } from '@/server/user';
 
 // Zod schema for form validation
 const signupSchema = z.object({
@@ -18,36 +17,13 @@ const signupSchema = z.object({
 });
 
 export const Route = createFileRoute('/signup')({
-  beforeLoad: async () => {
-    // Check if user is already logged in
-    try {
-      await getUserWithPasskey({});
-      // User is logged in, redirect to user settings
-      throw redirect({
-        to: '/user-settings',
-      });
-    } catch (error) {
-      // If it's a redirect, re-throw it
-      if (error && typeof error === 'object' && 'to' in error) {
-        throw error;
-      }
-      // Otherwise, user is not logged in, continue to signup page
+  beforeLoad: ({ context }) => {
+    if (context.sessionUser) {
+      throw redirect({ to: '/user-settings' });
     }
   },
-  component: SignupRouteComponent,
+  component: SignupPage,
 });
-
-function SignupRouteComponent() {
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  });
-
-  if (pathname !== '/signup') {
-    return <Outlet />;
-  }
-
-  return <SignupPage />;
-}
 
 function SignupPage() {
   const navigate = useNavigate();
@@ -57,26 +33,14 @@ function SignupPage() {
   const signupMutation = useToastMutation({
     action: 'Request signup code',
     toastSuccess: false, // Don't show toast since we're navigating
-    mutationFn: async (variables: { name: string; email: string }) => {
-      const result = await requestSignupOTPFn({ data: variables });
-      return result;
-    },
-    onSuccess: async (result, variables) => {
-      const token = result?.token;
-      if (!token) {
-        setFormError('Failed to get verification token. Please try again.');
-        return;
-      }
+    mutationFn: (variables: { name: string; email: string }) => requestSignupOTPFn({ data: variables }),
+    onSuccess: async ({ token }, variables) => {
+      await navigate({
+        to: '/signup-verify/$signupToken',
+        params: { signupToken: token },
+      });
+      // for demo purposes, show the last OTP in a toast
       await showLastOtpToast('signup-otp', variables.email);
-      try {
-        await navigate({
-          to: '/signup/$signupToken',
-          params: { signupToken: token },
-        });
-      } catch (error) {
-        console.error('Navigation error:', error);
-        setFormError('Failed to navigate to verification page. Please try again.');
-      }
     },
     setFormError,
   });
@@ -89,9 +53,7 @@ function SignupPage() {
     validators: {
       onChange: signupSchema,
     },
-    onSubmit: async ({ value }) => {
-      await signupMutation.mutateAsync(value);
-    },
+    onSubmit: ({ value }) => signupMutation.mutateAsync(value),
   });
 
   return (

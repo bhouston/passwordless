@@ -79,11 +79,11 @@ export async function signUpViaOtp(
 
   const { code: signupCode, token } = await getLatestOtpPayload('signup-otp', email);
 
-  if (!page.url().includes(`/signup/${token}`)) {
-    await page.goto(`${baseUrl}/signup/${token}`);
+  if (!page.url().includes(`/signup-verify/${token}`)) {
+    await page.goto(`${baseUrl}/signup-verify/${token}`);
   }
 
-  await expect(page).toHaveURL((url) => url.pathname === `/signup/${token}`, { timeout: 15000 });
+  await expect(page).toHaveURL((url) => url.pathname === `/signup-verify/${token}`, { timeout: 15000 });
 
   expect(signupCode).toHaveLength(8);
 

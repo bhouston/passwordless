@@ -44,18 +44,14 @@ function LoginViaCodePage() {
 
   const verifyCodeMutation = useToastMutation({
     action: 'Verify login code',
-    mutationFn: async (variables: { code: string }) => {
-      const result = await verifyCodeFn({
+    mutationFn: (variables: { code: string }) =>
+      verifyCodeFn({
         data: {
           token: codeVerificationToken,
           code: variables.code.toUpperCase(),
         },
-      });
-      return result;
-    },
-    onSuccess: async () => {
-      await navigate({ to: redirectTo });
-    },
+      }),
+    onSuccess: () => navigate({ to: redirectTo }),
     setFormError,
   });
 
@@ -71,9 +67,7 @@ function LoginViaCodePage() {
           .regex(/^[A-Z0-9]{8}$/, 'Code must be alphanumeric (A-Z, 0-9)'),
       }),
     },
-    onSubmit: async ({ value }) => {
-      await verifyCodeMutation.mutateAsync({ code: value.code.toUpperCase() });
-    },
+    onSubmit: ({ value }) => verifyCodeMutation.mutateAsync({ code: value.code.toUpperCase() }),
   });
 
   if (!tokenValid) {

@@ -31,19 +31,14 @@ function LoginRequestCodePage() {
   const requestCodeMutation = useToastMutation({
     action: 'Send login code email',
     toastError: false,
-    mutationFn: async (variables: { email: string }) => {
-      const result = await requestLoginCodeFn({ data: variables });
-      return result;
-    },
+    mutationFn: (variables: { email: string }) => requestLoginCodeFn({ data: variables }),
     onSuccess: async (result, variables) => {
-      if (result.token) {
-        await showLastOtpToast('login-otp', variables.email);
-        await router.navigate({
-          to: '/login-via-code/$codeVerificationToken',
-          params: { codeVerificationToken: result.token },
-          search: { redirectTo },
-        });
-      }
+      await router.navigate({
+        to: '/login-via-code/$codeVerificationToken',
+        params: { codeVerificationToken: result.token },
+        search: { redirectTo },
+      });
+      await showLastOtpToast('login-otp', variables.email);
     },
     setFormError,
   });
@@ -55,9 +50,7 @@ function LoginRequestCodePage() {
     validators: {
       onChange: loginRequestSchema,
     },
-    onSubmit: async ({ value }) => {
-      await requestCodeMutation.mutateAsync(value);
-    },
+    onSubmit: ({ value }) => requestCodeMutation.mutateAsync(value),
   });
 
   return (

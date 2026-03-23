@@ -29,17 +29,8 @@ function UserSettingsPage() {
   const updateNameMutation = useToastMutation({
     action: 'Profile update',
     setFormError,
-    mutationFn: async (data: UserDetailsFormData) => {
-      const result = await updateUserNameFn({ data });
-      if (!result.success) {
-        throw new Error('Failed to update user name');
-      }
-      return result;
-    },
-    onSuccess: async (result) => {
-      form.setFieldValue('name', result.user.name);
-      await router.invalidate();
-    },
+    mutationFn: (data: UserDetailsFormData) => updateUserNameFn({ data }),
+    onSuccess: () => router.invalidate(),
   });
 
   const form = useForm({
