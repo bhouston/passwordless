@@ -34,6 +34,18 @@ function HomePage() {
           </a>
           .
         </p>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Source code:{' '}
+          <a
+            href="https://github.com/bhouston/passwordless-login"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground"
+          >
+            Passwordless Login Demo
+          </a>
+          .
+        </p>
 
         <div className="mt-10 flex flex-wrap gap-3">
           <Button asChild size="lg">

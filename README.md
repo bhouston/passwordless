@@ -7,6 +7,8 @@ Demo application for the March 2026 Forward JS presentation on passwordless logi
 
 Live demo: [https://ben3d.xyz/u/pl](https://ben3d.xyz/u/pl)
 
+Source code: [Passwordless Login Demo](https://github.com/bhouston/passwordless-login)
+
 Presentation: [Creating a Passwordless User System](https://presentations.benhouston3d.com/passwordless-login/1?share=eyJhbGciOiJIUzI1NiJ9.eyJwdXJwb3NlIjoicHJlc2VudGF0aW9uLXNoYXJlIiwicHJlc2VudGF0aW9uU3R1YiI6InBhc3N3b3JkbGVzcy1sb2dpbiIsImlhdCI6MTc3NDM2MzIzNH0.WJmled1hHRFA2NIeB9dKbtCnKIlFm8t_Ti4yMbIs64k)
 
 ## Why this exists
