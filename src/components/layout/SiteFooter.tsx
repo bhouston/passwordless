@@ -8,7 +8,7 @@ export function SiteFooter() {
         <p className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0 text-center">
           Made with <Heart className="inline size-3.5 shrink-0 fill-red-500 text-red-500" aria-hidden /> by{' '}
           <a
-            href="https://benhouston3d.com"
+            href="https://ben3d.xyz"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground"

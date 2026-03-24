@@ -11,17 +11,28 @@ function HomePage() {
       <div className="page-wrap py-16 md:py-24">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Live demo</p>
         <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-foreground md:text-5xl md:leading-[1.08]">
-          Passwordless user accounts
+          Creating a passwordless login system
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          A real-world sample of production-style authentication:{' '}
-          <strong className="font-medium text-foreground">passkeys</strong> (WebAuthn) for day-to-day login, with{' '}
-          <strong className="font-medium text-foreground">email one-time codes</strong> as a reliable backup when a
-          passkey is not available.
+          Passwords are a shared-secret liability. This demo shows a modern passwordless flow that uses{' '}
+          <strong className="font-medium text-foreground">email OTP to establish identity</strong> and{' '}
+          <strong className="font-medium text-foreground">WebAuthn passkeys to authenticate</strong>.
         </p>
         <p className="mt-4 max-w-2xl text-sm text-muted-foreground">
-          Private keys stay on the device; the browser binds credentials to your site, which improves phishing
-          resistance compared to passwords alone.
+          Private keys stay on-device and are bound to your relying party (`rpId`), which gives stronger phishing
+          resistance than password-based login.
+        </p>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+          Presentation:{' '}
+          <a
+            href="https://presentations.benhouston3d.com/passwordless-login/1?share=eyJhbGciOiJIUzI1NiJ9.eyJwdXJwb3NlIjoicHJlc2VudGF0aW9uLXNoYXJlIiwicHJlc2VudGF0aW9uU3R1YiI6InBhc3N3b3JkbGVzcy1sb2dpbiIsImlhdCI6MTc3NDM2MzIzNH0.WJmled1hHRFA2NIeB9dKbtCnKIlFm8t_Ti4yMbIs64k"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground"
+          >
+            Creating a Passwordless User System
+          </a>
+          .
         </p>
 
         <div className="mt-10 flex flex-wrap gap-3">
@@ -35,21 +46,23 @@ function HomePage() {
 
         <div className="mt-16 grid gap-4 border border-border bg-card p-6 md:grid-cols-3 md:gap-6">
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Passkeys</h2>
+            <h2 className="text-sm font-semibold text-foreground">Email OTP establishes identity</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Register and login with WebAuthn—biometrics or device PIN, no password to reuse or leak.
+              Start with username + email, then verify a one-time code. This creates the account identity without
+              introducing a password.
             </p>
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Email OTP backup</h2>
+            <h2 className="text-sm font-semibold text-foreground">Passkeys authenticate</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Request a time-limited code in email when you need a fallback path that still avoids static passwords.
+              Passkeys are browser-native public/private key auth (think SSH keys for the web) with biometrics or a
+              device PIN.
             </p>
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Enumeration-safe flows</h2>
+            <h2 className="text-sm font-semibold text-foreground">Demo boundaries</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Designed so obvious “does this email exist?” signals are avoided where the demo implements those patterns.
+              This project intentionally skips production hardening such as rate limiting and real email delivery.
             </p>
           </div>
         </div>
