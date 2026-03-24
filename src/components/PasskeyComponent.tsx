@@ -1,11 +1,12 @@
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import { startRegistration } from '@simplewebauthn/browser';
 import { useCallback, useEffect, useState } from 'react';
 import type { UserPasskeyListItem } from '@/server/user';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldSet } from '@/components/ui/field';
 import { useToastMutation } from '@/hooks/useToastMutation';
-import { startPasskeyRegistration } from '@/lib/webauthnClient';
+import { toFriendlyWebAuthnError } from '@/lib/webauthnErrors';
 import { deletePasskey, generateRegistrationOptions, verifyRegistrationResponse } from '@/server/passkey';
 import { getUserPasskeys } from '@/server/user';
 
@@ -80,8 +81,10 @@ export function PasskeyComponent({ userId, userName, userDisplayName }: PasskeyC
         throw new Error('Failed to generate registration options');
       }
 
-      const registrationResponse = await startPasskeyRegistration({
+      const registrationResponse = await startRegistration({
         optionsJSON: result.options,
+      }).catch((err) => {
+        throw toFriendlyWebAuthnError(err, 'register');
       });
 
       await verifyRegistrationResponseFn({

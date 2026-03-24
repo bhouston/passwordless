@@ -15,30 +15,97 @@ type TestWebAuthnState = {
   isSupported?: boolean;
   nextAuthenticationError?: TestWebAuthnError;
   nextRegistrationError?: TestWebAuthnError;
+  originalPublicKeyCredential?: typeof PublicKeyCredential;
 };
 
 async function mergeTestState(page: Page, state: TestWebAuthnState) {
-  await page.addInitScript((value) => {
+  const applyState = (value: TestWebAuthnState) => {
     const testWindow = window as Window & {
       __testWebAuthn?: TestWebAuthnState;
     };
 
-    testWindow.__testWebAuthn = {
-      ...testWindow.__testWebAuthn,
+    const existingState = testWindow.__testWebAuthn ?? {};
+    const nextState = {
+      ...existingState,
       ...value,
     };
-  }, state);
 
-  await page.evaluate((value) => {
+    if (typeof value.isSupported === 'boolean') {
+      if (!value.isSupported) {
+        if (!existingState.originalPublicKeyCredential) {
+          nextState.originalPublicKeyCredential = window.PublicKeyCredential;
+        }
+        Object.defineProperty(window, 'PublicKeyCredential', {
+          configurable: true,
+          value: undefined,
+        });
+      } else if (existingState.originalPublicKeyCredential) {
+        Object.defineProperty(window, 'PublicKeyCredential', {
+          configurable: true,
+          value: existingState.originalPublicKeyCredential,
+        });
+      }
+    }
+
+    testWindow.__testWebAuthn = nextState;
+  };
+
+  await page.addInitScript(applyState, state);
+  await page.evaluate(applyState, state);
+}
+
+async function installErrorInjectionHooks(page: Page) {
+  const installHooks = () => {
+    type CredentialsWithHooks = CredentialsContainer & {
+      __testWrappedGet?: boolean;
+      __testWrappedCreate?: boolean;
+      __testOriginalGet?: CredentialsContainer['get'];
+      __testOriginalCreate?: CredentialsContainer['create'];
+    };
+
+    const credentials = navigator.credentials as CredentialsWithHooks | undefined;
+    if (!credentials) {
+      return;
+    }
     const testWindow = window as Window & {
       __testWebAuthn?: TestWebAuthnState;
     };
 
-    testWindow.__testWebAuthn = {
-      ...testWindow.__testWebAuthn,
-      ...value,
-    };
-  }, state);
+    if (!credentials.__testWrappedCreate && credentials.create) {
+      credentials.__testOriginalCreate = credentials.create.bind(credentials);
+      credentials.create = async (...args) => {
+        const nextError = testWindow.__testWebAuthn?.nextRegistrationError;
+        if (nextError) {
+          testWindow.__testWebAuthn = {
+            ...testWindow.__testWebAuthn,
+            nextRegistrationError: undefined,
+          };
+          throw new DOMException(nextError.message ?? nextError.name, nextError.name);
+        }
+        return (await credentials.__testOriginalCreate?.(...args)) ?? null;
+      };
+      credentials.__testWrappedCreate = true;
+    }
+
+    if (!credentials.__testWrappedGet && credentials.get) {
+      credentials.__testOriginalGet = credentials.get.bind(credentials);
+      credentials.get = async (...args) => {
+        const nextError = testWindow.__testWebAuthn?.nextAuthenticationError;
+        if (nextError) {
+          testWindow.__testWebAuthn = {
+            ...testWindow.__testWebAuthn,
+            nextAuthenticationError: undefined,
+          };
+          throw new DOMException(nextError.message ?? nextError.name, nextError.name);
+        }
+        return (await credentials.__testOriginalGet?.(...args)) ?? null;
+      };
+      credentials.__testWrappedGet = true;
+    }
+  };
+
+  await page.addInitScript(installHooks);
+  await page.evaluate(installHooks);
 }
 
 export class WebAuthnHarness {
@@ -98,9 +165,11 @@ export async function setWebAuthnSupport(page: Page, isSupported: boolean) {
 }
 
 export async function setNextRegistrationError(page: Page, error: TestWebAuthnError) {
+  await installErrorInjectionHooks(page);
   await mergeTestState(page, { nextRegistrationError: error });
 }
 
 export async function setNextAuthenticationError(page: Page, error: TestWebAuthnError) {
+  await installErrorInjectionHooks(page);
   await mergeTestState(page, { nextAuthenticationError: error });
 }

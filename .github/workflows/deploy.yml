@@ -13,9 +13,9 @@ jobs:
       GAR_HOSTNAME: us-central1-docker.pkg.dev # Artifact Registry hostname
       PROJECT_ID: bhouston-general-hosting # Your GCP project ID
       REGION: us-central1 # Cloud Run region
-      SERVICE: passwordless-login # Cloud Run service name
+      SERVICE: passwordless # Cloud Run service name
       DOCKER_REGISTRY: shared-docker-registry
-      SITE_URL: https://passwordless-login.benhouston3d.com
+      SITE_URL: https://passwordless.benhouston3d.com
     steps:
       - name: Checkout
         uses: actions/checkout@v4

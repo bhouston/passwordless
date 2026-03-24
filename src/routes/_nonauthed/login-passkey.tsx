@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import { startAuthentication } from '@simplewebauthn/browser';
 import { useState } from 'react';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup } from '@/components/ui/field';
 import { useToastMutation } from '@/hooks/useToastMutation';
-import { isWebAuthnSupported, startPasskeyAuthentication } from '@/lib/webauthnClient';
+import { toFriendlyWebAuthnError } from '@/lib/webauthnErrors';
+import { isWebAuthnSupported } from '@/lib/webauthnIsSupported';
 import { initiatePasskeyDiscovery, verifyAuthenticationResponse } from '@/server/passkey';
 
 export const Route = createFileRoute('/_nonauthed/login-passkey')({
@@ -26,10 +28,11 @@ function LoginPasskeyPage() {
     mutationFn: async () => {
       const result = await generateAuthOptions({});
 
-      const authenticationResponse = await startPasskeyAuthentication(
-        { optionsJSON: result.options },
-        { flow: 'discovery' },
-      );
+      const authenticationResponse = await startAuthentication({
+        optionsJSON: result.options,
+      }).catch((err) => {
+        throw toFriendlyWebAuthnError(err, 'discovery');
+      });
 
       await verifyAuthResponseFn({
         data: {

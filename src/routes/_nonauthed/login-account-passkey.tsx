@@ -1,6 +1,7 @@
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import { startAuthentication } from '@simplewebauthn/browser';
 import { useState } from 'react';
 import { z } from 'zod';
 import { AuthLayout } from '@/components/layout/AuthLayout';
@@ -8,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useToastMutation } from '@/hooks/useToastMutation';
-import { isWebAuthnSupported, startPasskeyAuthentication } from '@/lib/webauthnClient';
+import { toFriendlyWebAuthnError } from '@/lib/webauthnErrors';
+import { isWebAuthnSupported } from '@/lib/webauthnIsSupported';
 import { initiatePasskeyAuthenticationForEmail, verifyAuthenticationResponse } from '@/server/passkey';
 
 const accountPasskeyLoginSchema = z.object({
@@ -33,10 +35,11 @@ function LoginAccountPasskeyPage() {
     mutationFn: async (variables: { email: string }) => {
       const start = await initiateForEmailFn({ data: variables });
 
-      const authenticationResponse = await startPasskeyAuthentication(
-        { optionsJSON: start.options },
-        { flow: 'account' },
-      );
+      const authenticationResponse = await startAuthentication({
+        optionsJSON: start.options,
+      }).catch((err) => {
+        throw toFriendlyWebAuthnError(err, 'account');
+      });
 
       await verifyAuthResponseFn({
         data: {

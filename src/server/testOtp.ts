@@ -34,13 +34,13 @@ export function broadcastTestOtp(payload: BroadcastTestOtpPayload): void {
 
   // Centralized console logging
   if (type === 'signup-otp') {
-    console.log('\n=== Signup OTP Code ===');
+    console.log('\n=== Signup One-Time Passcode ===');
     if (name) console.log(`Name: ${name}`);
     console.log(`Email: ${email}`);
     console.log(`Code: ${code}`);
     console.log('=======================\n');
   } else {
-    console.log('\n=== Login Code ===');
+    console.log('\n=== Login One-Time Passcode ===');
     console.log(`Email: ${email}`);
     console.log(`Code: ${code}`);
     console.log('==================\n');

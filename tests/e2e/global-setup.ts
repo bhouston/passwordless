@@ -95,10 +95,7 @@ export default async function globalSetup(_project: TestProject): Promise<() => 
       cwd: projectRoot,
       env: {
         ...process.env,
-        // Production build inlines NODE_ENV on the client; use E2E_WEBAUTHN_HOOKS so SSR exposes data-node-env="test"
-        // for webauthnClient test hooks (see src/routes/__root.tsx).
         NODE_ENV: 'test',
-        E2E_WEBAUTHN_HOOKS: '1',
         PORT: String(port),
         SITE_URL: baseUrl,
         DATABASE_URL: './db.test.sqlite',

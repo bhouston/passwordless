@@ -67,11 +67,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <head>
           <HeadContent />
         </head>
-        <body
-          className="flex min-h-dvh flex-col"
-          data-hydrated="false"
-          data-node-env={process.env.E2E_WEBAUTHN_HOOKS === '1' ? 'test' : (process.env.NODE_ENV ?? 'development')}
-        >
+        <body className="flex min-h-dvh flex-col" data-hydrated="false">
           <GoogleAnalytics measurementId="G-N6EJ5EVDJL" />
           <HydrationMarker />
           <Header />
