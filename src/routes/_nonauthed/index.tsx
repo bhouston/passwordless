@@ -25,7 +25,7 @@ function HomePage() {
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
           Presentation:{' '}
           <a
-            href="https://presentations.benhouston3d.com/passwordless-login/1?share=eyJhbGciOiJIUzI1NiJ9.eyJwdXJwb3NlIjoicHJlc2VudGF0aW9uLXNoYXJlIiwicHJlc2VudGF0aW9uU3R1YiI6InBhc3N3b3JkbGVzcy1sb2dpbiIsImlhdCI6MTc3NDM2MzIzNH0.WJmled1hHRFA2NIeB9dKbtCnKIlFm8t_Ti4yMbIs64k"
+            href="https://ben3d.xyz/u/plp"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground"
