@@ -34,6 +34,21 @@ Passkeys are effectively SSH-style public/private key auth in the browser. Priva
 
 ## Run locally
 
+Install sqlite:
+
+```
+# MacOS
+brew install sqlite
+
+# Linux
+sudo apt-get install sqlite3
+
+# Windows
+choco install sqlite
+```
+
+Run app
+
 ```bash
 pnpm install
 pnpm db:init
