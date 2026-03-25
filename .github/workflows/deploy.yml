@@ -15,7 +15,7 @@ jobs:
       REGION: us-central1 # Cloud Run region
       SERVICE: passwordless # Cloud Run service name
       DOCKER_REGISTRY: shared-docker-registry
-      SITE_URL: https://passwordless.benhouston3d.com
+      SITE_URL: https://passwordless.ben3d.ca
     steps:
       - name: Checkout
         uses: actions/checkout@v4
