@@ -3,32 +3,27 @@ import { jwtVerify, SignJWT, type JWTPayload } from 'jose';
 import { z } from 'zod';
 import { getEnvConfig } from './env';
 
-// Token expiration times (in seconds)
-/** Email OTP verification link / token lifetime */
-export const CODE_VERIFICATION_TOKEN_EXPIRATION = 15 * 60; // 15 minutes
-/** Passkey challenge / discovery handshake JWT lifetime */
-export const PASSKEY_CHALLENGE_TOKEN_EXPIRATION = 10 * 60; // 10 minutes
-
 const jwtIssuedExpirySchema = z.object({
   iat: z.number(),
   exp: z.number(),
 });
 
-/** HS256 sign: validate claims with `signSchema`, then issue a short-lived JWT. */
+/** HS256 sign: validate claims with `signSchema`, then issue a JWT expiring at `expiresAt`. */
 export async function signHs256Jwt<T extends JWTPayload>(
   claimsInput: unknown,
   signSchema: z.ZodType<T>,
-  expiresInSeconds: number,
+  expiresAt: Date,
 ): Promise<string> {
   const validated = signSchema.parse(claimsInput);
   const env = getEnvConfig();
   const secret = new TextEncoder().encode(env.JWT_SECRET);
   const now = Math.floor(Date.now() / 1000);
+  const expiresAtSeconds = Math.floor(expiresAt.getTime() / 1000);
 
   return await new SignJWT(validated)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt(now)
-    .setExpirationTime(now + expiresInSeconds)
+    .setExpirationTime(expiresAtSeconds)
     .sign(secret);
 }
 
@@ -55,16 +50,12 @@ export async function verifyHs256Jwt<T>(token: string, verifiedSchema: z.ZodType
 
 const codeVerificationSignupSignSchema = z.object({
   purpose: z.literal('signup'),
-  email: z.string(),
-  name: z.string(),
-  otpHash: z.string().min(1),
+  otpChallengeId: z.number().int().positive(),
 });
 
 const codeVerificationLoginSignSchema = z.object({
   purpose: z.literal('login'),
-  userId: z.number(),
-  email: z.string(),
-  otpHash: z.string().min(1),
+  otpChallengeId: z.number().int().positive(),
 });
 
 /** Fields embedded in the JWT when issuing an OTP verification token (no iat/exp — jose adds those). */

@@ -18,7 +18,6 @@ import { passkeys, users } from '@/db/schema';
 import { setSessionUserId } from './appSession';
 import { getEnvConfig } from './env';
 import {
-  PASSKEY_CHALLENGE_TOKEN_EXPIRATION,
   passkeyChallengeSignSchema,
   passkeyChallengeVerifiedPayloadSchema,
   passkeyDiscoverySignSchema,
@@ -27,6 +26,7 @@ import {
   verifyHs256Jwt,
 } from './jwt';
 import { requireUser } from './middleware';
+import { createExpiresAt } from './time';
 
 /**
  * Convert userId to base64url encoded Uint8Array for WebAuthn userID
@@ -99,12 +99,13 @@ export const generateRegistrationOptions = createServerFn({ method: 'POST' })
     };
 
     const options = await swaGenerateRegistrationOptions(opts);
+    const expiresAt = createExpiresAt(env.PASSKEY_CHALLENGE_TOKEN_EXPIRATION);
 
     // Create JWT token with challenge and user identity
     const token = await signHs256Jwt(
       { challenge: options.challenge, userId: data.userId, email: user.email },
       passkeyChallengeSignSchema,
-      PASSKEY_CHALLENGE_TOKEN_EXPIRATION,
+      expiresAt,
     );
 
     return {
@@ -203,13 +204,10 @@ export const initiatePasskeyDiscovery = createServerFn({
   };
 
   const options = await swaGenerateAuthenticationOptions(opts);
+  const expiresAt = createExpiresAt(env.PASSKEY_CHALLENGE_TOKEN_EXPIRATION);
 
   // Create discovery token (challenge only, no userId)
-  const token = await signHs256Jwt(
-    { challenge: options.challenge },
-    passkeyDiscoverySignSchema,
-    PASSKEY_CHALLENGE_TOKEN_EXPIRATION,
-  );
+  const token = await signHs256Jwt({ challenge: options.challenge }, passkeyDiscoverySignSchema, expiresAt);
 
   return {
     options,
@@ -230,6 +228,7 @@ export const initiatePasskeyAuthenticationForEmail = createServerFn({
 })
   .inputValidator(initiatePasskeyAuthForEmailSchema)
   .handler(async ({ data }) => {
+    const env = getEnvConfig();
     const email = data.email.trim();
 
     const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -246,8 +245,6 @@ export const initiatePasskeyAuthenticationForEmail = createServerFn({
       );
     }
 
-    const env = getEnvConfig();
-
     const opts: GenerateAuthenticationOptionsOpts = {
       rpID: env.RP_ID,
       timeout: 60000,
@@ -259,10 +256,11 @@ export const initiatePasskeyAuthenticationForEmail = createServerFn({
     };
 
     const options = await swaGenerateAuthenticationOptions(opts);
+    const expiresAt = createExpiresAt(env.PASSKEY_CHALLENGE_TOKEN_EXPIRATION);
     const token = await signHs256Jwt(
       { challenge: options.challenge, userId: user.id, email: user.email },
       passkeyChallengeSignSchema,
-      PASSKEY_CHALLENGE_TOKEN_EXPIRATION,
+      expiresAt,
     );
 
     return {

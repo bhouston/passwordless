@@ -77,8 +77,21 @@ The 8-character alphanumeric format provides approximately **2.8 million times**
 function generateOTPCode(): string {
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	let code = "";
-	for (let i = 0; i < 8; i++) {
-		code += chars.charAt(Math.floor(Math.random() * chars.length));
+	const maxByte = Math.floor(256 / chars.length) * chars.length;
+
+	while (code.length < 8) {
+		const bytes = randomBytes(8 - code.length);
+
+		for (const byte of bytes) {
+			if (byte >= maxByte) {
+				continue;
+			}
+
+			code += chars.charAt(byte % chars.length);
+			if (code.length === 8) {
+				break;
+			}
+		}
 	}
 	return code;
 }

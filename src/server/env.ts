@@ -8,6 +8,16 @@ const envConfigSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   SITE_URL: z.string().url('SITE_URL must be a valid URL'),
   SITE_NAME: z.string().min(1, 'SITE_NAME is required'),
+  CODE_VERIFICATION_TOKEN_EXPIRATION: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60),
+  PASSKEY_CHALLENGE_TOKEN_EXPIRATION: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10 * 60),
   RP_ID: z.string().min(1, 'RP_ID must not be empty').optional(),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   NODE_ENV: z.enum(['development', 'production', 'test']).optional(),

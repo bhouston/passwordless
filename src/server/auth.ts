@@ -1,17 +1,18 @@
 import { createServerFn } from '@tanstack/react-start';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
-import { users } from '@/db/schema';
+import { otpChallenges, users } from '@/db/schema';
 import { clearAppSession, setSessionUserId } from './appSession';
 import {
-  CODE_VERIFICATION_TOKEN_EXPIRATION,
   codeVerificationSignInputSchema,
   codeVerificationVerifiedPayloadSchema,
   signHs256Jwt,
   verifyHs256Jwt,
 } from './jwt';
+import { getEnvConfig } from './env';
+import { createExpiresAt } from './time';
 import { broadcastTestOtp } from './testOtp';
 
 // Zod schemas for validation
@@ -47,8 +48,21 @@ const verifySignupCodeSchema = z.object({
 function generateOTPCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  const maxByte = Math.floor(256 / chars.length) * chars.length;
+
+  while (code.length < 8) {
+    const bytes = randomBytes(8 - code.length);
+
+    for (const byte of bytes) {
+      if (byte >= maxByte) {
+        continue;
+      }
+
+      code += chars.charAt(byte % chars.length);
+      if (code.length === 8) {
+        break;
+      }
+    }
   }
   return code;
 }
@@ -70,6 +84,8 @@ function hashOTPCode(code: string): string {
 export const requestSignupOTP = createServerFn({ method: 'POST' })
   .inputValidator(signupSchema)
   .handler(async ({ data }) => {
+    const env = getEnvConfig();
+
     // Check if email already exists
     const existingUser = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
 
@@ -80,16 +96,30 @@ export const requestSignupOTP = createServerFn({ method: 'POST' })
     // Generate OTP code
     const code = generateOTPCode();
     const otpHash = hashOTPCode(code);
+    const expiresAt = createExpiresAt(env.CODE_VERIFICATION_TOKEN_EXPIRATION);
+
+    const [challenge] = await db
+      .insert(otpChallenges)
+      .values({
+        operation: 'signup',
+        email: data.email,
+        name: data.name,
+        codeHash: otpHash,
+        expiresAt,
+      })
+      .returning({ id: otpChallenges.id });
+
+    if (!challenge) {
+      throw new Error('Failed to issue sign-up code. Please try again.');
+    }
 
     const token = await signHs256Jwt(
       {
         purpose: 'signup',
-        email: data.email,
-        name: data.name,
-        otpHash,
+        otpChallengeId: challenge.id,
       },
       codeVerificationSignInputSchema,
-      CODE_VERIFICATION_TOKEN_EXPIRATION,
+      expiresAt,
     );
 
     // Console log + SSE broadcast (development/test only)
@@ -119,22 +149,47 @@ export const verifySignupOTPAndCreateUser = createServerFn({
       throw new Error('Invalid code. Please check your email and try again.');
     }
 
-    const submittedOtpHash = hashOTPCode(data.code.toUpperCase());
-    if (payload.otpHash !== submittedOtpHash) {
+    const [challenge] = await db
+      .select()
+      .from(otpChallenges)
+      .where(eq(otpChallenges.id, payload.otpChallengeId))
+      .limit(1);
+
+    if (!challenge || challenge.operation !== 'signup' || challenge.usedAt) {
       throw new Error('Invalid code. Please check your email and try again.');
     }
 
-    const existingUser = await db.select().from(users).where(eq(users.email, payload.email)).limit(1);
+    if (challenge.expiresAt.getTime() <= Date.now()) {
+      throw new Error('This code has expired. Please request a new one.');
+    }
+
+    const submittedOtpHash = hashOTPCode(data.code.toUpperCase());
+    if (challenge.codeHash !== submittedOtpHash) {
+      throw new Error('Invalid code. Please check your email and try again.');
+    }
+
+    const existingUser = await db.select().from(users).where(eq(users.email, challenge.email)).limit(1);
 
     if (existingUser.length > 0) {
       throw new Error('An account with this email already exists');
     }
 
+    if (!challenge.name) {
+      throw new Error('Invalid code. Please check your email and try again.');
+    }
+
+    await db
+      .update(otpChallenges)
+      .set({
+        usedAt: new Date(),
+      })
+      .where(eq(otpChallenges.id, challenge.id));
+
     const [newUser] = await db
       .insert(users)
       .values({
-        name: payload.name,
-        email: payload.email,
+        name: challenge.name,
+        email: challenge.email,
       })
       .returning();
 
@@ -155,6 +210,8 @@ export const verifySignupOTPAndCreateUser = createServerFn({
 export const requestLoginCode = createServerFn({ method: 'POST' })
   .inputValidator(requestLoginCodeSchema)
   .handler(async ({ data }) => {
+    const env = getEnvConfig();
+
     // Look up user by email
     const [user] = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
 
@@ -164,16 +221,30 @@ export const requestLoginCode = createServerFn({ method: 'POST' })
 
     const code = generateOTPCode();
     const otpHash = hashOTPCode(code);
+    const expiresAt = createExpiresAt(env.CODE_VERIFICATION_TOKEN_EXPIRATION);
+
+    const [challenge] = await db
+      .insert(otpChallenges)
+      .values({
+        operation: 'login',
+        userId: user.id,
+        email: user.email,
+        codeHash: otpHash,
+        expiresAt,
+      })
+      .returning({ id: otpChallenges.id });
+
+    if (!challenge) {
+      throw new Error('Failed to issue login code. Please try again.');
+    }
 
     const token = await signHs256Jwt(
       {
         purpose: 'login',
-        userId: user.id,
-        email: data.email,
-        otpHash,
+        otpChallengeId: challenge.id,
       },
       codeVerificationSignInputSchema,
-      CODE_VERIFICATION_TOKEN_EXPIRATION,
+      expiresAt,
     );
 
     // Console log + SSE broadcast (development/test only)
@@ -202,18 +273,39 @@ export const verifyLoginCodeAndAuthenticate = createServerFn({
       throw new Error('Invalid code. Please check your email and try again.');
     }
 
+    const [challenge] = await db
+      .select()
+      .from(otpChallenges)
+      .where(eq(otpChallenges.id, payload.otpChallengeId))
+      .limit(1);
+
+    if (!challenge || challenge.operation !== 'login' || challenge.usedAt || !challenge.userId) {
+      throw new Error('Invalid code. Please check your email and try again.');
+    }
+
+    if (challenge.expiresAt.getTime() <= Date.now()) {
+      throw new Error('This code has expired. Please request a new one.');
+    }
+
     const submittedOtpHash = hashOTPCode(data.code.toUpperCase());
-    if (payload.otpHash !== submittedOtpHash) {
+    if (challenge.codeHash !== submittedOtpHash) {
       throw new Error('Invalid code. Please check your email and try again.');
     }
 
-    const [dbUser] = await db.select().from(users).where(eq(users.id, payload.userId)).limit(1);
+    const [dbUser] = await db.select().from(users).where(eq(users.id, challenge.userId)).limit(1);
 
-    if (!dbUser || dbUser.email !== payload.email) {
+    if (!dbUser || dbUser.email !== challenge.email) {
       throw new Error('Invalid code. Please check your email and try again.');
     }
 
-    await setSessionUserId(payload.userId);
+    await db
+      .update(otpChallenges)
+      .set({
+        usedAt: new Date(),
+      })
+      .where(eq(otpChallenges.id, challenge.id));
+
+    await setSessionUserId(challenge.userId);
 
     return { user: dbUser };
   });
