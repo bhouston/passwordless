@@ -25,24 +25,24 @@ function HomePage() {
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
           Presentation:{' '}
           <a
-            href="https://ben3d.xyz/u/plp"
+            href="https://ben3d.ca/~pwl-deck"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground"
           >
-            Creating a Passwordless User System
+            Creating a Passwordless User System Presentation
           </a>
           .
         </p>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           Source code:{' '}
           <a
-            href="https://github.com/bhouston/passwordless-login"
+            href="https://github.com/bhouston/passwordless"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-foreground underline decoration-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground"
           >
-            Passwordless Login Demo
+            Passwordless Demo Source Code on Github
           </a>
           .
         </p>
