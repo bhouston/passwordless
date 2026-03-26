@@ -90,7 +90,7 @@ export const requestSignupOTP = createServerFn({ method: 'POST' })
     const existingUser = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
 
     if (existingUser.length > 0) {
-      throw new Error('An account with this email already exists');
+      throw new Error('An account with this email already exists, please login instead');
     }
 
     // Generate OTP code
@@ -171,7 +171,7 @@ export const verifySignupOTPAndCreateUser = createServerFn({
     const existingUser = await db.select().from(users).where(eq(users.email, challenge.email)).limit(1);
 
     if (existingUser.length > 0) {
-      throw new Error('An account with this email already exists');
+      throw new Error('An account with this email already exists, please login instead');
     }
 
     if (!challenge.name) {
