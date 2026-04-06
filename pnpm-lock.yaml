@@ -99,8 +99,8 @@ importers:
         specifier: ^4.2.0
         version: 4.2.2
       tanstack-router-ga4:
-        specifier: ^0.5.2
-        version: 0.5.2(@tanstack/react-router@1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
+        specifier: ^1.6.0
+        version: 1.6.0(@tanstack/react-router@1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
       ua-parser-js:
         specifier: ^2.0.9
         version: 2.0.9
@@ -3226,8 +3226,8 @@ packages:
   tailwindcss@4.2.2:
     resolution: {integrity: sha512-KWBIxs1Xb6NoLdMVqhbhgwZf2PGBpPEiwOqgI4pFIYbNTfBXiKYyWoTsXgBQ9WFg/OlhnvHaY+AEpW7wSmFo2Q==}
 
-  tanstack-router-ga4@0.5.2:
-    resolution: {integrity: sha512-1oaSCwpAOJuv/4STCijuOelE1h77aCiBgX8FzgOkA2wEdKKR2N1Mwqyq+VNqPb4iUfOYFWNBWkB4eJu5mqAwgg==}
+  tanstack-router-ga4@1.6.0:
+    resolution: {integrity: sha512-H9SUSFvDtDH68CNmwKISeVASPKr2DmKFs3ZlfFrmWrjFLDbujMbJxhJHaSHdKcY8dFTP8qoWJSIGP0jBa6vr6Q==}
     peerDependencies:
       '@tanstack/react-router': '>=1'
       react: '>=18'
@@ -6249,7 +6249,7 @@ snapshots:
 
   tailwindcss@4.2.2: {}
 
-  tanstack-router-ga4@0.5.2(@tanstack/react-router@1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3):
+  tanstack-router-ga4@1.6.0(@tanstack/react-router@1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3):
     dependencies:
       '@tanstack/react-router': 1.154.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
